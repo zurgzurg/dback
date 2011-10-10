@@ -1,0 +1,81 @@
+Primary Programs
+------------------
+1. Pool Master
+
+2. Backup Agent
+
+3. Region Registty
+
+Block
+------------------
+Blocks are the things used to back up a system. A block has a data bytes
+and meta data bytes and a UUID. Blocks can be of any size from 0 data
+bytes and zero meta data up to 2^64 data and meta data bytes. [Need to have
+some kind of way to properly/efficiently transfer huge blocks - a single
+UDP packet will not do.]
+
+[Most likely large blocks will need to be sent via TCP so that flow control
+can be used to avoid creating network and host problems.]
+
+There is no requirement that a single file be stored in a single block.
+In fact the hope is that there will be multiple ways of encoding files
+into blocks - perhaps many small files can be combined into one medium
+sized block - or a single large file can be split into multiple blocks.
+
+The main point is that the block is the atomic unit of storage.
+
+
+
+Pool
+------------------
+Pools are used to store blocks. A pool exists on exactly one machine. Pools
+have a type (raid, disk, file, directory, etc.), a pool class, and a UUID.
+While a pool exists on only one machine, several pools can have the same
+class - the intent is to allow several machines to offer the "same" pool
+class. Two blocks that are stored in the same pool class can share
+data bytes, but have different meta data bytes. In this case the data bytes
+will be stored once.
+
+Region
+------------------
+Regions are used to keep track of information (available pools) in a
+globally hierarchical manner. A pool master registers the existance of
+a pool in exactly one region registry. A region can be thought of as
+being similar to a DNS domain.
+
+A backup agent communicates with it's local region registry for all
+information queries. The local registry is responsible for caching
+the answers to queries and to sending queries to other registries.
+
+
+Communitation Messages
+----------------------
+1. Pool Master -> Region Registry:
+   Advertise creation/availability of a pool
+
+2. Backup Agent -> (local only) Region Registry:
+   Request list of storage pools in a region
+
+3. Backup Agent -> Pool Master
+   Request storage of a block.
+   [Since blocks can be very small to very large there should be
+   some way of handling this. Perhaps UDP is used for small blocks
+   switching to TCP for large ones].
+
+4. Backup Agent -> Pool Master
+   Block status check - can be used to confirm that a block has been
+   stored - an initialization vector is sent and used to calculate a
+   checksum over the block. Can also indicate if a block is not fully
+   present - received some sub blocks but not all.
+
+5. Backup Agent -> Pool Master
+   Retrieve a block - In the intial version of the system a block would
+   need to be retrieved in full. 
+
+6. Backup Agent -> Pool Master
+   Status Request - simple way for a back up agent to check if a pool
+   master is up and ready to accept blocks - but even a positive response
+   does not gaurantee anything.
+
+Protocol
+------------------------
