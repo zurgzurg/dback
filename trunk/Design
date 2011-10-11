@@ -48,6 +48,27 @@ the answers to queries and to sending queries to other registries.
 
 @page protocol Protocol
 
+The core of the protocol is based on message passing, remote procedure call
+semantics are built on top of that. The fundamental entity sent on the
+wire is the message.
+
+A message looks like this:
+
+  - version - unsigned 8 bit. The initial version is 1.
+
+  - reserved - unsigned 8 bit - must be zero for version 1.
+
+  - message type - unsigned 16 bit, network byte order - Each kind of message
+    has a type number.
+
+  - len - unsigned 32 bit, network byte order - This is the total message
+    length including the message length and other header fields.
+
+  - cookie - unsigned 32 bit. The cookie is for higher level protocols.
+    The low level protocol routines do not use this field.
+
+  - data - byte array. For use by higher level protocol routines.
+
 @page programs Programs
 
 There are three primary entities in a dback system:
