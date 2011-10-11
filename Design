@@ -1,13 +1,14 @@
-Primary Programs
-------------------
-1. Pool Master
+/**
 
-2. Backup Agent
+@mainpage notitle
+@namespace dback
 
-3. Region Registty
+@page overview Overview of dback
 
-Block
-------------------
+dback is a library to assist in creating a distributed backup service.
+
+@page block Blocks
+
 Blocks are the things used to back up a system. A block has a data bytes
 and meta data bytes and a UUID. Blocks can be of any size from 0 data
 bytes and zero meta data up to 2^64 data and meta data bytes. [Need to have
@@ -24,10 +25,8 @@ sized block - or a single large file can be split into multiple blocks.
 
 The main point is that the block is the atomic unit of storage.
 
+@page pool Pools
 
-
-Pool
-------------------
 Pools are used to store blocks. A pool exists on exactly one machine. Pools
 have a type (raid, disk, file, directory, etc.), a pool class, and a UUID.
 While a pool exists on only one machine, several pools can have the same
@@ -36,8 +35,8 @@ class. Two blocks that are stored in the same pool class can share
 data bytes, but have different meta data bytes. In this case the data bytes
 will be stored once.
 
-Region
-------------------
+@page region Regions
+
 Regions are used to keep track of information (available pools) in a
 globally hierarchical manner. A pool master registers the existance of
 a pool in exactly one region registry. A region can be thought of as
@@ -46,6 +45,17 @@ being similar to a DNS domain.
 A backup agent communicates with it's local region registry for all
 information queries. The local registry is responsible for caching
 the answers to queries and to sending queries to other registries.
+
+@page protocol Protocol
+
+@page programs Programs
+
+There are three primary entities in a dback system:
+ - pool master
+ - backup agent
+ - region registry
+
+*/
 
 
 Communitation Messages
@@ -76,6 +86,3 @@ Communitation Messages
    Status Request - simple way for a back up agent to check if a pool
    master is up and ready to accept blocks - but even a positive response
    does not gaurantee anything.
-
-Protocol
-------------------------
