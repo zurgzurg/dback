@@ -16,6 +16,7 @@ AC_PROG_CXX
 AC_LANG([C++])
 
 AX_CXX_HAVE_STL
+AX_CXX_NAMESPACE_STD
 
 ###############################################################
 
