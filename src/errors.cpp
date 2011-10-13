@@ -1,3 +1,8 @@
+#include "config.h"
+
+#include <cstddef>
+#include <exception>
+
 #include "dback.h"
 
 namespace dback {
