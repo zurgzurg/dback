@@ -13,7 +13,10 @@ namespace dback {
      * Class for various errors.
      *
      */
-    class Error {
+    class Error : public std::exception {
+    public:
+	Error() : std::exception() {;};
+	size_t doNothing() const throw();
     };
 
 
@@ -79,7 +82,13 @@ namespace dback {
 	 * @param [in] bf The serialization buffer to use.
 	 * @param [in] sz Size of bf.
 	 */
-	SerialBuffer(uchar *bf, size_t sz);
+	SerialBuffer(uchar *bf, size_t sz)
+	    : buf(bf),
+	      sizeOfBuffer(sz),
+	      writeIdx(0),
+	      readIdx(0)     {;};
+
+	size_t junkFunc() const throw();
     };
 
     /**
