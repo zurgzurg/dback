@@ -7,7 +7,7 @@
 rm -f aclocal.m4 configure depcomp
 rm -f install-sh ltmain.sh missing Makefile Makefile.in *~
 rm -f INSTALL
-rm -f config.log config.status libtool cpptoken-*.tar.gz
+rm -f config.log config.status config.guess config.sub libtool
 rm -f m4/ltsugar.m4 m4/libtool.m4 m4/ltversion.m4 m4/lt~obsolete.m4
 rm -f m4/ltoptions.m4
 rm -f include/Makefile.in
