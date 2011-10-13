@@ -1,7 +1,9 @@
 noinst_PROGRAMS = dback_utests
 bin_PROGRAMS = dback
+TESTS = dback_utests
 
 dback_SOURCES = dback.cpp
+
 
 lib_LTLIBRARIES = libdback.la
 libdback_la_SOURCES = dback.cpp errors.cpp dback.h
