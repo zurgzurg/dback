@@ -77,7 +77,7 @@ echo "Summary of required items"
 echo ""
 echo "AS_HELP_STRING([Use multi-threading],[${mt_exec}])"
 echo "AS_HELP_STRING([Have C++ STL],[${ax_cv_cxx_have_stl}])"
-echo "AS_HELP_STRING([Have C++ namespaces],[${ax_cv_cxx_namespaces}])"
+echo "AS_HELP_STRING([Have C++ namespaces],[${ax_cv_cxx_have_std_namespace}])"
 
 echo ""
 echo "Summary of optional items"
@@ -94,7 +94,7 @@ AS_IF([test "x${DX_FLAG_pdf}" = "x1"],
 echo ""
 AS_IF([test "x${ax_cv_cxx_have_stl}" != "xyes"],
       [AC_MSG_ERROR([Required STL support missing. Build stops.])])
-AS_IF([test "x${ax_cv_cxx_namespaces}" != "xyes"],
+AS_IF([test "x${ax_cv_cxx_have_std_namespace}" != "xyes"],
       [AC_MSG_ERROR([Required C++ namespaces support missing. Build stops.])])
 
 echo "Useful next steps:"
