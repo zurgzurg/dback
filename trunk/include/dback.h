@@ -8,6 +8,7 @@ namespace dback {
 
     class MessageContext;
     class Message;
+    class SerialBuffer;
 
     /**
      * Class for various errors.
@@ -26,7 +27,7 @@ namespace dback {
      * All objects that are intended to be serialized should derive
      * from this class.
      */
-    class SerialBase {
+    class Serializable {
     public:
 	/**
 	 * Used to generate bytes into a buffer.
@@ -84,7 +85,7 @@ namespace dback {
 	 */
 	SerialBuffer(uchar *bf, size_t sz)
 	    : buf(bf),
-	      sizeOfBuffer(sz),
+	      sizeOfBuf(sz),
 	      writeIdx(0),
 	      readIdx(0)     {;};
 
