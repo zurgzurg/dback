@@ -19,7 +19,16 @@ AX_CXX_HAVE_STL
 AX_CXX_NAMESPACE_STD
 
 ###############################################################
+## need ints of various sizes in c++
+###############################################################
+AC_TYPE_INT8_T
+AC_TYPE_UINT8_T
+AC_TYPE_INT16_T
+AC_TYPE_UINT16_T
+AC_TYPE_INT32_T
+AC_TYPE_UINT32_T
 
+###############################################################
 AC_CONFIG_HEADERS([src/config.h])
 
 ###############################################################
