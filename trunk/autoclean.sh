@@ -13,7 +13,7 @@ rm -f m4/ltoptions.m4
 rm -f include/Makefile.in
 
 rm -f src/*.o src/*.lo src/Makefile.in src/*~ src/utests src/*.a src/*.la
-rm -f src/stamp-h1 src/config.h src/Makefile
+rm -f src/stamp-h1 src/config.h src/Makefile src/config.h.in
 rm -f include/Makefile include/Makefile.in
 
 

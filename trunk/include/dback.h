@@ -89,7 +89,22 @@ namespace dback {
 	      writeIdx(0),
 	      readIdx(0)     {;};
 
-	size_t junkFunc() const throw();
+	/**
+	 * @param [in] v value to add to serializatio buffer.
+	 */
+	void putInt8(int8_t v);
+	void putInt8(int8_t v, size_t idx);
+	void putInt16(int8_t v);
+	void putInt16(int8_t v, size_t);
+	void putInt32(int8_t v);
+	void putInt32(int8_t v, size_t idx);
+
+	void putUInt8(uint8_t v);
+	void putUInt8(uint8_t v, size_t idx);
+	void putUInt16(uint8_t v);
+	void putUInt16(uint8_t v, size_t idx);
+	void putUInt32(uint8_t v);
+	void putUInt32(uint8_t v, size_t idx);
     };
 
     /**
@@ -98,6 +113,7 @@ namespace dback {
     class MessageContext {
       
     };
+
 }
 
 /*
