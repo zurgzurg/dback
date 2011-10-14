@@ -42,6 +42,16 @@ DX_PS_FEATURE(OFF)
 DX_INIT_DOXYGEN([dback], [doxyfile])
 
 ###############################################################
+## Add some tips for useful config settings
+###############################################################
+m4_divert_once([HELP_VAR_END], [[
+-------------------------------------------------------------
+Here are some useful options:
+
+--disable-shared  -- makes it easier to run under a debugger
+-------------------------------------------------------------]])
+
+###############################################################
 ## actually generate the output
 ###############################################################
 AS_IF([test "x${DX_FLAG_doc}" = "x1" ],
