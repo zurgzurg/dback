@@ -1,14 +1,16 @@
 ## Process this file with automake to produce Makefile.in
 
+lib_sources = serialbuffer.cpp
+
+
 noinst_PROGRAMS = dback_utests
 bin_PROGRAMS = dback
 TESTS = dback_utests
 
 dback_SOURCES = dback.cpp
 
-
 lib_LTLIBRARIES = libdback.la
-libdback_la_SOURCES = dback.cpp serialbuffer.cpp dback.h
+libdback_la_SOURCES = $(lib_sources) dback.h
 libdback_la_CXXFLAGS = -I$(top_srcdir)/include
 
 dback_utests_SOURCES = dback_utests.cpp
@@ -16,7 +18,14 @@ dback_utests_LDADD = libdback.la
 dback_utests_CXXFLAGS = -I$(top_srcdir)/include
 
 #################################
-## try to setup for running gcov
+# dev support to run gcov
 #################################
-foo: foo.c
-	gcc -o $@ $<
+gcov_lib_objs = $(foreach f,$(patsubst %.cpp,%.o,$(lib_sources)),coverage/$(f))
+
+coverage/dback_utests.o $(gcov_lib_objs): coverage/%.o: %.cpp
+	g++ -c -o $@ -fprofile-arcs -ftest-coverage -I$(top_srcdir)/include $<
+
+coverage/dback_utests: coverage/dback_utests.o $(gcov_lib_objs)
+	g++ -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
+
+all-local: coverage/dback_utests
