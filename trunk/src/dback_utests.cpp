@@ -2,7 +2,8 @@
 
 #include <cstddef>
 #include <exception>
-#include <stdint.h>
+
+#include <inttypes.h>
 
 #include "dback.h"
 
@@ -349,7 +350,7 @@ struct TC_Serial01 : public TestCase {
 void
 TC_Serial01::run()
 {
-    uchar buf[10];
+    uint8_t buf[10];
     SerialBuffer(&buf[0], sizeof(buf));
     this->setStatus(true);
 }
@@ -364,8 +365,94 @@ struct TC_Serial02 : public TestCase {
 void
 TC_Serial02::run()
 {
-    uchar buf[10];
-    SerialBuffer(&buf[0], sizeof(buf));
+    uint8_t buf[1];
+    bool s;
+    int8_t v;
+
+    SerialBuffer sb(&buf[0], sizeof(buf));
+    s = sb.putInt8(0);
+    ASSERT_TRUE(s);
+    v = 1;
+    s = sb.getInt8(&v);
+    ASSERT_TRUE(s);
+    ASSERT_TRUE(v == 0);
+
+    this->setStatus(true);
+}
+
+/************/
+
+struct TC_Serial03 : public TestCase {
+    TC_Serial03() : TestCase("TC_Serial03") {;};
+    void run();
+};
+
+void
+TC_Serial03::run()
+{
+    {
+	uint8_t buf[5];
+	bool s;
+	int8_t i, v;
+	
+	SerialBuffer sb(&buf[0], sizeof(buf));
+	
+	s = sb.putInt8(127);
+	ASSERT_TRUE(s);
+	s = sb.putInt8(1);
+	ASSERT_TRUE(s);
+	s = sb.putInt8(0);
+	ASSERT_TRUE(s);
+	s = sb.putInt8(-1);
+	ASSERT_TRUE(s);
+	s = sb.putInt8(-128);
+	ASSERT_TRUE(s);
+
+	v = 1;
+
+	s = sb.getInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 127);
+	s = sb.getInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 1);
+	s = sb.getInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 0);
+	s = sb.getInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == -1);
+	s = sb.getInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == -128);
+    }
+
+    {
+	uint8_t buf[3];
+	bool s;
+	uint8_t i, v;
+	
+	SerialBuffer sb(&buf[0], sizeof(buf));
+	
+	s = sb.putUInt8(0);
+	ASSERT_TRUE(s);
+	s = sb.putUInt8(1);
+	ASSERT_TRUE(s);
+	s = sb.putUInt8(255);
+	ASSERT_TRUE(s);
+
+	v = 1;
+
+	s = sb.getUInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 0);
+	s = sb.getUInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 1);
+	s = sb.getUInt8(&v);
+	ASSERT_TRUE(s);
+	ASSERT_TRUE(v == 255);
+    }
 
     this->setStatus(true);
 }
@@ -383,6 +470,8 @@ make_suite_all_tests()
     s->addTestCase(new TC_Basic01());
 
     s->addTestCase(new TC_Serial01());
+    s->addTestCase(new TC_Serial02());
+    s->addTestCase(new TC_Serial03());
     
     return s;
 }
