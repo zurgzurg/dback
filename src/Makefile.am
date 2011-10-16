@@ -20,12 +20,17 @@ dback_utests_CXXFLAGS = -I$(top_srcdir)/include
 #################################
 # dev support to run gcov
 #################################
-gcov_lib_objs = $(foreach f,$(patsubst %.cpp,%.o,$(lib_sources)),coverage/$(f))
+tmp_obj_names = $(patsubst %.cpp,%.o,$(lib_sources))
+gcov_lib_objs = $(foreach f,$(tmp_obj_names),coverage/$(f))
+
+coverage-stamp:
+	mkdir coverage
+	touch coverage-stamp
 
 coverage/dback_utests.o $(gcov_lib_objs): coverage/%.o: %.cpp
 	g++ -c -o $@ -fprofile-arcs -ftest-coverage -I$(top_srcdir)/include $<
 
-coverage/dback_utests: coverage/dback_utests.o $(gcov_lib_objs)
+coverage/dback_utests: coverage-stamp coverage/dback_utests.o $(gcov_lib_objs)
 	g++ -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
 
-all-local: coverage/dback_utests
+all-local: coverage-stamp coverage/dback_utests
