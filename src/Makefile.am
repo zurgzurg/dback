@@ -20,7 +20,7 @@ dback_utests_CXXFLAGS = -I$(top_srcdir)/include
 #################################
 # dev support to run gcov
 #################################
-tmp_obj_names = $(patsubst %.cpp,%.o,$(lib_sources))
+tmp_obj_names = $($(lib_sources):.cpp=.o)
 gcov_lib_objs = $(foreach f,$(tmp_obj_names),coverage/$(f))
 
 coverage-stamp:
