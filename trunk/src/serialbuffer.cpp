@@ -11,17 +11,22 @@ namespace dback
 bool
 SerialBuffer::putInt8(int8_t v)
 {
-    if (this->writeIdx >= this->sizeOfBuf)
+    if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
+
     this->buf[ this->writeIdx++ ] = (uint8_t)v;
+
     return true;
 }
 
 bool
 SerialBuffer::putInt8(int8_t v, size_t idx)
 {
-    if (idx >= this->sizeOfBuf)
+    if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
+
+    this->buf[ idx ] = (uint8_t)v;
+
     return true;
 }
 
