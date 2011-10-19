@@ -528,6 +528,47 @@ TC_Serial06::run()
     this->setStatus(true);
 }
 
+/************/
+
+struct TC_Serial07 : public TestCase {
+    TC_Serial07() : TestCase("TC_Serial07") {;};
+    void run();
+};
+
+void
+TC_Serial07::run()
+{
+    uint8_t buf[2 * sizeof(int16_t)];
+    bool s;
+    int16_t v;
+
+    SerialBuffer sb(&buf[0], sizeof(buf));
+
+    v = -1;
+    s = sb.putInt16(v);
+    ASSERT_TRUE(s == true);
+
+    v = 0;
+    s = sb.putInt16(v);
+    ASSERT_TRUE(s == true);
+
+    s = sb.putInt16(v);
+    ASSERT_TRUE(s == false);
+
+    s = sb.getInt16(&v);
+    ASSERT_TRUE(s == true);
+    ASSERT_TRUE(v == -1);
+
+    s = sb.getInt16(&v);
+    ASSERT_TRUE(s == true);
+    ASSERT_TRUE(v == 0);
+
+    s = sb.getInt16(&v);
+    ASSERT_TRUE(s == false);
+
+    this->setStatus(true);
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -546,6 +587,7 @@ make_suite_all_tests()
     s->addTestCase(new TC_Serial04());
     s->addTestCase(new TC_Serial05());
     s->addTestCase(new TC_Serial06());
+    s->addTestCase(new TC_Serial07());
     
     return s;
 }
