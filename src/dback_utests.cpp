@@ -457,6 +457,77 @@ TC_Serial03::run()
     this->setStatus(true);
 }
 
+/************/
+
+struct TC_Serial04 : public TestCase {
+    TC_Serial04() : TestCase("TC_Serial04") {;};
+    void run();
+};
+
+void
+TC_Serial04::run()
+{
+    uint8_t buf[1];
+    bool s;
+
+    SerialBuffer sb(&buf[0], sizeof(buf));
+
+    s = sb.putInt8(0);
+    ASSERT_TRUE(s == true);
+    s = sb.putInt8(1);
+    ASSERT_TRUE(s == false);
+
+    this->setStatus(true);
+}
+
+/************/
+
+struct TC_Serial05 : public TestCase {
+    TC_Serial05() : TestCase("TC_Serial05") {;};
+    void run();
+};
+
+void
+TC_Serial05::run()
+{
+    uint8_t buf[1];
+    bool s;
+    int8_t v;
+
+    SerialBuffer sb(&buf[0], sizeof(buf));
+    s = sb.putInt8(22, 0);
+    ASSERT_TRUE(s);
+    v = 1;
+    s = sb.getInt8(&v, 0);
+    ASSERT_TRUE(s);
+    ASSERT_TRUE(v == 22);
+
+    this->setStatus(true);
+}
+
+/************/
+
+struct TC_Serial06 : public TestCase {
+    TC_Serial06() : TestCase("TC_Serial06") {;};
+    void run();
+};
+
+void
+TC_Serial06::run()
+{
+    uint8_t buf[1];
+    bool s;
+
+    SerialBuffer sb(&buf[0], sizeof(buf));
+
+    s = sb.putInt8(0, 0);
+    ASSERT_TRUE(s == true);
+    s = sb.putInt8(1, 1);
+    ASSERT_TRUE(s == false);
+
+    this->setStatus(true);
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -472,6 +543,9 @@ make_suite_all_tests()
     s->addTestCase(new TC_Serial01());
     s->addTestCase(new TC_Serial02());
     s->addTestCase(new TC_Serial03());
+    s->addTestCase(new TC_Serial04());
+    s->addTestCase(new TC_Serial05());
+    s->addTestCase(new TC_Serial06());
     
     return s;
 }

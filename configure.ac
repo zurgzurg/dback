@@ -117,5 +117,10 @@ AS_IF([test "x${ax_cv_cxx_have_std_namespace}" != "xyes"],
       [AC_MSG_ERROR([Required C++ namespaces support missing. Build stops.])])
 
 echo "Useful next steps:"
+echo ""
 echo "  make doxygen-doc -- generates documentation"
 echo "                      output into doxygen-doc/*"
+echo ""
+echo "Getting code coverage info"
+echo "  ( cd src ; ./coverage/dback_utests ; gcov --object-file ./coverage/serialbuffer.gcno  serialbuffer.cpp )"
+echo ""
