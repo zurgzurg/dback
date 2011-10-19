@@ -67,7 +67,7 @@ private:
 public:
     /**
      * @param [in] bf The serialization buffer to use.
-     * @param [in] sz Size of bf.
+     * @param [in] sz Size of bf in bytes.
      */
     SerialBuffer(uint8_t *bf, size_t sz)
 	: buf(bf),
@@ -97,7 +97,7 @@ public:
      * is returned.
      *
      * @param [in] v value to add to serializatio buffer.
-     * @param [in] idx position to write data.
+     * @param [in] idx byte offset to write data.
      *
      * @return true if data written false otherwise
      */

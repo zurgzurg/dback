@@ -51,7 +51,7 @@ SerialBuffer::putInt16(int16_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons((uint8_t)v);
+    uint16_t v2 = htons((uint16_t)v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ idx + 0 ] = b0;
@@ -66,7 +66,7 @@ SerialBuffer::putInt32(int32_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint8_t)v);
+    uint32_t v2 = htonl((uint32_t)v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -86,7 +86,7 @@ SerialBuffer::putInt32(int32_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint8_t)v);
+    uint32_t v2 = htonl((uint32_t)v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -123,7 +123,7 @@ SerialBuffer::putUInt16(uint16_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons((uint8_t)v);
+    uint16_t v2 = htons(v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ this->writeIdx++ ] = b0;
@@ -138,7 +138,7 @@ SerialBuffer::putUInt16(uint16_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons((uint8_t)v);
+    uint16_t v2 = htons(v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ idx + 0 ] = b0;
@@ -153,7 +153,7 @@ SerialBuffer::putUInt32(uint32_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint8_t)v);
+    uint32_t v2 = htonl(v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -173,7 +173,7 @@ SerialBuffer::putUInt32(uint32_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint8_t)v);
+    uint32_t v2 = htonl(v);
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
