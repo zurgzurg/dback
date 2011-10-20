@@ -36,7 +36,7 @@ SerialBuffer::putInt16(int16_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons((uint16_t)v);
+    uint16_t v2 = (uint16_t)v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ this->writeIdx++ ] = b0;
@@ -51,7 +51,7 @@ SerialBuffer::putInt16(int16_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons((uint16_t)v);
+    uint16_t v2 = (uint16_t)v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ idx + 0 ] = b0;
@@ -66,7 +66,7 @@ SerialBuffer::putInt32(int32_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint32_t)v);
+    uint32_t v2 = (uint32_t)v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -86,7 +86,7 @@ SerialBuffer::putInt32(int32_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl((uint32_t)v);
+    uint32_t v2 = (uint32_t)v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -124,7 +124,7 @@ SerialBuffer::putUInt16(uint16_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons(v);
+    uint16_t v2 = v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ this->writeIdx++ ] = b0;
@@ -139,7 +139,7 @@ SerialBuffer::putUInt16(uint16_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint16_t v2 = htons(v);
+    uint16_t v2 = v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >> 8) & 0xFF;
     this->buf[ idx + 0 ] = b0;
@@ -154,7 +154,7 @@ SerialBuffer::putUInt32(uint32_t v)
     if (this->writeIdx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl(v);
+    uint32_t v2 = v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -174,7 +174,7 @@ SerialBuffer::putUInt32(uint32_t v, size_t idx)
     if (idx + sizeof(v) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint32_t v2 = htonl(v);
+    uint32_t v2 = v;
     uint8_t b0 = v2 & 0xFF;
     uint8_t b1 = (v2 >>  8) & 0xFF;
     uint8_t b2 = (v2 >> 16) & 0xFF;
@@ -206,7 +206,7 @@ SerialBuffer::getInt8(int8_t *ptr, size_t idx)
     if (idx + sizeof(*ptr) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint8_t b0 = this->buf[ this->readIdx ];
+    uint8_t b0 = this->buf[ idx ];
     *ptr = (int8_t)b0;
 
     return true;
@@ -221,7 +221,7 @@ SerialBuffer::getInt16(int16_t *ptr)
     uint8_t b0 = this->buf[ this->readIdx++ ];
     uint8_t b1 = this->buf[ this->readIdx++ ];
     uint16_t tmp = (b1 << 8) | b0;
-    uint16_t val = ntohs(tmp);
+    uint16_t val = tmp;
     *ptr = (int16_t)val;
 
     return true;
@@ -236,7 +236,7 @@ SerialBuffer::getInt16(int16_t *ptr, size_t idx)
     uint8_t b0 = this->buf[ idx + 0 ];
     uint8_t b1 = this->buf[ idx + 1 ];
     uint16_t tmp = (b1 << 8) | b0;
-    uint16_t val = ntohs(tmp);
+    uint16_t val = tmp;
     *ptr = (int16_t)val;
 
     return true;
@@ -253,7 +253,7 @@ SerialBuffer::getInt32(int32_t *ptr)
     uint8_t b2 = this->buf[ this->readIdx++ ];
     uint8_t b3 = this->buf[ this->readIdx++ ];
     uint32_t tmp = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-    uint32_t val = ntohl(tmp);
+    uint32_t val = tmp;
     *ptr = (int32_t)val;
 
     return true;
@@ -270,7 +270,7 @@ SerialBuffer::getInt32(int32_t *ptr, size_t idx)
     uint8_t b2 = this->buf[ idx + 2 ];
     uint8_t b3 = this->buf[ idx + 3 ];
     uint32_t tmp = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-    uint32_t val = ntohl(tmp);
+    uint32_t val = tmp;
     *ptr = (int32_t)val;
 
     return true;
@@ -309,7 +309,7 @@ SerialBuffer::getUInt16(uint16_t *ptr)
     uint8_t b0 = this->buf[ this->readIdx++ ];
     uint8_t b1 = this->buf[ this->readIdx++ ];
     uint16_t tmp = (b1 << 8) | b0;
-    uint16_t val = ntohs(tmp);
+    uint16_t val = tmp;
     *ptr = val;
 
     return true;
@@ -324,7 +324,7 @@ SerialBuffer::getUInt16(uint16_t *ptr, size_t idx)
     uint8_t b0 = this->buf[ idx + 0 ];
     uint8_t b1 = this->buf[ idx + 1 ];
     uint16_t tmp = (b1 << 8) | b0;
-    uint16_t val = ntohs(tmp);
+    uint16_t val = tmp;
     *ptr = val;
 
     return true;
@@ -341,7 +341,7 @@ SerialBuffer::getUInt32(uint32_t *ptr)
     uint8_t b2 = this->buf[ this->readIdx++ ];
     uint8_t b3 = this->buf[ this->readIdx++ ];
     uint32_t tmp = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-    uint32_t val = ntohl(tmp);
+    uint32_t val = tmp;
     *ptr = val;
 
     return true;
@@ -358,7 +358,7 @@ SerialBuffer::getUInt32(uint32_t *ptr, size_t idx)
     uint8_t b2 = this->buf[ idx + 2 ];
     uint8_t b3 = this->buf[ idx + 3 ];
     uint32_t tmp = (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
-    uint32_t val = ntohl(tmp);
+    uint32_t val = tmp;
     *ptr = val;
 
     return true;

@@ -914,6 +914,198 @@ TC_Serial14::run()
     this->setStatus(true);
 }
 
+/************/
+
+struct TC_Serial15 : public TestCase {
+    TC_Serial15() : TestCase("TC_Serial15") {;};
+    void run();
+};
+
+void
+TC_Serial15::run()
+{
+    {
+	uint8_t buf[2 * sizeof(int32_t)];
+	bool s;
+	uint32_t v32;
+	uint8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v32 = 0x04030201;
+	s = sb.putUInt32(v32);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getUInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x01);
+
+	s = sb.getUInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x02);
+
+	s = sb.getUInt8(&v8, 2);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x03);
+
+	s = sb.getUInt8(&v8, 3);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x04);
+    }
+
+    {
+	uint8_t buf[2 * sizeof(int32_t)];
+	bool s;
+	int32_t v32;
+	int8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v32 = 0x04030201;
+	s = sb.putInt32(v32);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x01);
+
+	s = sb.getInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x02);
+
+	s = sb.getInt8(&v8, 2);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x03);
+
+	s = sb.getInt8(&v8, 3);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x04);
+    }
+
+    {
+	uint8_t buf[1 * sizeof(int32_t)];
+	bool s;
+	uint32_t v32;
+	int8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v32 = 0x7fFDFEFF;
+	s = sb.putUInt32(v32);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -1);
+
+	s = sb.getInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -2);
+
+	s = sb.getInt8(&v8, 2);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -3);
+
+	s = sb.getInt8(&v8, 3);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 127);
+    }
+
+    {
+	uint8_t buf[1 * sizeof(int32_t)];
+	bool s;
+	int32_t v32;
+	int8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v32 = 0x7fFDFEFF;
+	s = sb.putInt32(v32);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -1);
+
+	s = sb.getInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -2);
+
+	s = sb.getInt8(&v8, 2);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -3);
+
+	s = sb.getInt8(&v8, 3);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 127);
+    }
+
+    {
+	uint8_t buf[1 * sizeof(int16_t)];
+	bool s;
+	uint16_t v16;
+	int8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v16 = 0x7fFF;
+	s = sb.putUInt16(v16);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == -1);
+
+	s = sb.getInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 127);
+    }
+
+    {
+	uint8_t buf[2 * sizeof(int16_t)];
+	bool s;
+	uint16_t v16;
+	uint8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v16 = 0x0201;
+	s = sb.putUInt16(v16);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getUInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x01);
+
+	s = sb.getUInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x02);
+    }
+
+    {
+	uint8_t buf[2 * sizeof(int16_t)];
+	bool s;
+	int16_t v16;
+	int8_t v8;
+
+	SerialBuffer sb(&buf[0], sizeof(buf));
+
+	v16 = 0x0201;
+	s = sb.putInt16(v16);
+	ASSERT_TRUE(s == true);
+
+	s = sb.getInt8(&v8, 0);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x01);
+
+	s = sb.getInt8(&v8, 1);
+	ASSERT_TRUE(s == true);
+	ASSERT_TRUE(v8 == 0x02);
+    }
+
+    this->setStatus(true);
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -940,6 +1132,7 @@ make_suite_all_tests()
     s->addTestCase(new TC_Serial12());
     s->addTestCase(new TC_Serial13());
     s->addTestCase(new TC_Serial14());
+    s->addTestCase(new TC_Serial15());
     
     return s;
 }
