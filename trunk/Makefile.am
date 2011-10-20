@@ -3,3 +3,6 @@ ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src
 
 include ./doxygen.am
+
+coverage:
+	rm -fr src/coverage* src/*.gcov ; cd src ; make coverage/dback_utests ; ./src/coverage/dback_utests ; gcov --object-file ./coverage/serialbuffer.gcno  serialbuffer.cpp
