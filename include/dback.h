@@ -76,11 +76,40 @@ public:
 	  readIdx(0)     {;};
 
     /**
+     * Set the write index byte position.
+     *
+     * If idx is a valid idx, set the write index to this value and true
+     * is returned. If idx is invalid then no change is made and false
+     * is returned.
+     *
+     * @param [in] idx Byte offset to set the write byte index.
+     *
+     * @result return true if index modified, false otherwise.
+     */
+    bool setWriteIdx(size_t idx);
+
+    /**
+     * Set the read index byte position.
+     *
+     * If idx is a valid idx, set the read index to this value and true
+     * is returned. If idx is invalid then no change is made and false
+     * is returned.
+     *
+     * @param [in] idx Byte offset to set the read byte index.
+     *
+     * @result return true if index modified, false otherwise.
+     */
+    bool setReadIdx(size_t idx);
+
+    /**
      * Add an int8_t to the buffer.
      * The buffer is checked to verify that the writeIdx refers to
      * a valid buffer index and that there is enough space for the
      * entire value. If not false is returned and the buffer is unchanged.
      * If yes data is written, writeIdx is advanced and true is returned.
+     *
+     * The int16 and int32 varients write take values in host byte
+     * order and write them in network byte order.
      *
      * @param [in] v value to add to serializatio buffer.
      *
@@ -95,6 +124,9 @@ public:
      * not false is returned, the buffer is unchanged. If yes the
      * value is written, the writeIdx value is unchanged and true
      * is returned.
+     *
+     * The int16 and int32 varients write take values in host byte
+     * order and write them in network byte order.
      *
      * @param [in] v value to add to serializatio buffer.
      * @param [in] idx byte offset to write data.
@@ -144,6 +176,9 @@ public:
      * and stored in the memory pointed to by ptr, readIdx is
      * advanced and true is returned.
      *
+     * The int16 and int32 varients write take values in host byte
+     * order and write them in network byte order.
+     *
      * @param [in] ptr pointer to memory to return data read from the buffer.
      * 
      * @return true if data successfully read, false otherwise.
@@ -157,7 +192,11 @@ public:
      * entire value to be read. If not false is returned, the
      * buffer is unchanged, and nothing is written to the ptr.
      *
+     * The int16 and int32 varients write take values in host byte
+     * order and write them in network byte order.
+     *
      * @param [in] ptr pointer to memory to return data read from the buffer.
+     * @param [in] idx byte offset location to write first byte.
      * 
      * @return true if data successfully read, false otherwise.
      */
