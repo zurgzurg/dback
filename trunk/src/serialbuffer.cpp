@@ -114,6 +114,7 @@ SerialBuffer::putUInt8(uint8_t v, size_t idx)
 {
     if (idx >= this->sizeOfBuf)
 	return false;
+    this->buf[ idx ] = v;
     return true;
 }
 
@@ -293,7 +294,7 @@ SerialBuffer::getUInt8(uint8_t *ptr, size_t idx)
     if (idx + sizeof(*ptr) - 1 >= this->sizeOfBuf)
 	return false;
 
-    uint8_t b0 = this->buf[ this->readIdx ];
+    uint8_t b0 = this->buf[ idx ];
     *ptr = b0;
 
     return true;
