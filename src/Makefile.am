@@ -31,5 +31,3 @@ coverage/dback_utests.o $(gcov_lib_objs): coverage/%.o: %.cpp
 
 coverage/dback_utests: coverage-stamp coverage/dback_utests.o $(gcov_lib_objs)
 	g++ -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
-
-all-local: coverage-stamp coverage/dback_utests
