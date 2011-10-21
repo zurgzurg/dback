@@ -15,8 +15,9 @@ bytes and zero meta data up to 2^64 data and meta data bytes. [Need to have
 some kind of way to properly/efficiently transfer huge blocks - a single
 UDP packet will not do.]
 
-[Most likely large blocks will need to be sent via TCP so that flow control
-can be used to avoid creating network and host problems.]
+[Most likely large blocks will need to be sent via TCP, otherwise managing
+the transmission process via UDP would be too much work and would just
+duplicate what TCP does.]
 
 There is no requirement that a single file be stored in a single block.
 In fact the hope is that there will be multiple ways of encoding files
