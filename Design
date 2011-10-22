@@ -7,6 +7,25 @@
 
 dback is a library to assist in creating a distributed backup service.
 
+@page xstuff
+
+Design Principles
+
+1. Let the file system provide file system services - name lookup, data storage
+   and disk block defragmentation
+
+2. The "name" of a block is it's UUID
+
+3. Need to support these kinds of operations
+
+   find all blocks from a particular machine
+   find the largest block
+   find the newest block
+
+   get the data for a block
+
+   how much space is available in the pool
+
 @page block Blocks
 
 Blocks are the things used to back up a system. A block has a data bytes

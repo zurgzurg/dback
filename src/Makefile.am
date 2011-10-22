@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-lib_sources = serialbuffer.cpp
+lib_sources = btree.cpp serialbuffer.cpp
 
 
 noinst_PROGRAMS = dback_utests
@@ -20,7 +20,7 @@ dback_utests_CXXFLAGS = -I$(top_srcdir)/include
 #################################
 # dev support to run gcov
 #################################
-gcov_lib_objs = coverage/serialbuffer.o
+gcov_lib_objs = coverage/btree.o coverage/serialbuffer.o
 
 coverage-stamp:
 	mkdir coverage
