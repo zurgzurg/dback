@@ -2,10 +2,12 @@
 
 #include <cstddef>
 #include <exception>
+#include <string>
 
 #include <inttypes.h>
 
 #include "dback.h"
+#include "btree.h"
 
 #include <cstdarg>
 #include <cstring>
@@ -1106,6 +1108,60 @@ TC_Serial15::run()
     this->setStatus(true);
 }
 
+
+/****************************************************/
+/****************************************************/
+/* basic btree tests                                */
+/****************************************************/
+/****************************************************/
+namespace dback {
+
+struct TC_BTree00 : public TestCase {
+    TC_BTree00() : TestCase("TC_BTree00") {;};
+    void run();
+};
+
+void
+TC_BTree00::run()
+{
+    BTree b;
+    IndexHeader ih;
+    PageHeader ph;
+    PageAccess ac;
+    UUIDKey k;
+    ErrorInfo err;
+    bool ok;
+
+
+    ih.nKeyBytes = 16;
+    ih.pageSizeInBytes = 4096;
+    ih.minNumLeafKeys = 0;
+    ih.maxNumLeafKeys = 0;
+    ih.minNumNLeafKeys = 0;
+    ih.maxNumNLeafKeys = 0;
+
+    ph.parentPageNum = 0;
+    ph.numKeys = 0;
+    ph.isLeaf = 1;
+    ph.pad0 = 0;
+    ph.pad1 = 0;
+
+    ac.header = &ph;
+    ac.keys = NULL;
+    ac.childPtrs = NULL;
+    ac.values = NULL;
+
+    b.header = &ih;
+    b.root = &ac;
+
+    ok = b.insertInLeaf(&ac, &k, &err);
+    ASSERT_TRUE(ok == false);
+    
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1134,6 +1190,8 @@ make_suite_all_tests()
     s->addTestCase(new TC_Serial14());
     s->addTestCase(new TC_Serial15());
     
+    s->addTestCase(new dback::TC_BTree00());
+
     return s;
 }
 

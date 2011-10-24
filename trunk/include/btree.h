@@ -75,6 +75,28 @@ namespace dback {
  * follow.
  *
  *
+ * @verbatim
+ *
+ * Non-Leaf Page
+ * +-----------------------+---------+
+ * | header|array of 32bit |array of |
+ * |       |child ptrs     |keys     |
+ * +-----------------------+---------+
+ *
+ * Leaf Page
+ * +--------------------+----------+
+ * | header|array 64bit |array of  |
+ * |       |user data   |keys      |
+ * +--------------------+----------+
+ *
+ * @endverbatim
+ *
+ * In a non-leaf page the length of the child pointer array is one more
+ * that the number of keys. The extra pointer is stored at the end of the
+ * array.
+ *
+ *
+ *
  */
 
 
@@ -82,6 +104,7 @@ namespace dback {
  * Holds meta data about a particular btree index.
  */
 class IndexHeader {
+public:
     /// Size of key in bytes.
     uint32_t nKeyBytes;
 
@@ -89,56 +112,141 @@ class IndexHeader {
     uint32_t pageSizeInBytes;
 
     /// Each node will have at least this many keys.
-    uint32_t minNumKeys;
+    uint32_t minNumLeafKeys;
 
     /// Each node will have at most this many keys.
-    uint32_t maxNumKeys;
+    uint32_t maxNumLeafKeys;
+
+    /// Each node will have at least this many keys.
+    uint32_t minNumNLeafKeys;
+
+    /// Each node will have at most this many keys.
+    uint32_t maxNumNLeafKeys;
 };
 
 /**
- * Initial bytes of a Node page.
+ * Initial bytes of a btree page - leaf and non-leaf.
  *
- * Nodes are the non-leaf entries in the BTree.
+ * Describes the kind of page - leaf or non-leaf. Also has
+ * links to parent.
  */
-class NodeHeader {
+class PageHeader {
+public:
+    /// Page number of this nodes parent. Unused in root node.
     uint32_t parentPageNum;
-    uint8_t  numKeys;
-    uint8_t  isLeaf;
-    uint8_t  pad0;
-    uint8_t  pad1;
-    uint32_t extraChildPtr;
-};
 
-/**
- * Used to access a node page that is read into memory.
- */
-class NodeAccess {
-    NodeHeader *nheader;
-    uint32_t *childPtrs;
-    uint8_t *keyPtrs;
-};
-
-/**
- * Initial bytes of a Leaf page.
- *
- * A leaf page stores the user data values associated with each key,
- * and does not have any child node pointers.
- */
-class LeafHeader {
-    uint32_t parentPageNum;
+    /// Number of keys in this node.
     uint8_t  numKeys;
+
+    /// 1 if this node is a leaf node, 0 otherwise.
     uint8_t  isLeaf;
+
+    /// must be zero.
     uint8_t  pad0;
+
+    /// must be zero.
     uint8_t  pad1;
 };
 
 /**
- * Used to access a leaf page that is read into memory.
+ * Used to access a node or leaf page.
  */
-class LeafAccess {
-    LeafHeader *lheader;
-    uint64_t *values;
+class PageAccess {
+public:
+    /// pointer to page header
+    PageHeader *header;
+
+    /**
+     * Pointer to array of keys.
+     *
+     * Key size is fixed at the time of btree creation.
+     *
+     */
     uint8_t *keys;
+
+    /**
+     * Pointer to array of child node page numbers.
+     *
+     * This pointer or the user data pointer will be
+     * valid. Both are not used at the same time.
+     *
+     * @note The length of the child pointer array is one more
+     * than the number of keys. The extra pointer is stored at
+     * the end of the array.
+     */
+    uint32_t *childPtrs;
+
+    /**
+     * Pointer to array of user data.
+     *
+     * This pointer or the user data pointer will be
+     * valid. Both are not used at the same time. The number of
+     * user data is the same as the number of keys.
+     */
+    uint64_t *values;
+};
+
+/**
+ * Used to report error status and messages.
+ */
+class ErrorInfo {
+public:
+    bool haveError;
+    std::string message;
+};
+
+/**
+ * Used to abstract a key.
+ *
+ * This is a pure virtual base class. Any class that wants to be
+ * used as a key should inherit from this class and implement the
+ * compare method.
+ */
+class KeyInterface {
+public:
+    /**
+     * Compare two keys.
+     *
+     * Return <0 0 or >0 if the key pointed to by a is
+     * less than, equal to, or greater than the key pointed
+     * to by b. Undefined if a or b is invalid.
+     */
+    virtual int compare(const uint8_t *a, const uint8_t *b) = 0;
+};
+
+/**
+ * Convenience class to use a UUID as a key.
+ *
+ */
+class UUIDKey : public KeyInterface {
+public:
+    int compare(const uint8_t *a, const uint8_t *b);
+};
+
+class BTree {
+public:
+    IndexHeader *header;
+    PageAccess *root;
+    
+
+    void create();
+    void destroy();
+
+    void find();
+    void remove();
+    void insert();
+
+    void insertInNode();
+
+    /**
+     * Insert a key,value into a leaf node.
+     *
+     *
+     */
+    bool insertInLeaf(PageAccess *ac, KeyInterface *ki, ErrorInfo *err);
+
+    void split();
+    void join();
 };
 
 }

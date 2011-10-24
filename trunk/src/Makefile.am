@@ -27,7 +27,7 @@ coverage-stamp:
 	touch coverage-stamp
 
 coverage/dback_utests.o $(gcov_lib_objs): coverage/%.o: %.cpp
-	g++ -c -o $@ -fprofile-arcs -ftest-coverage -I$(top_srcdir)/include $<
+	g++ -c -g -O1 -o $@ -fprofile-arcs -ftest-coverage -I$(top_srcdir)/include $<
 
 coverage/dback_utests: coverage-stamp coverage/dback_utests.o $(gcov_lib_objs)
-	g++ -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
+	g++ -g -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
