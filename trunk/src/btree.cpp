@@ -32,6 +32,32 @@ UUIDKey::compare(const uint8_t *a, const uint8_t *b)
     return 0;
 }
 
+void
+UUIDKey::initIndexHeader(IndexHeader *h, uint32_t pageSizeInBytes)
+{
+    h->nKeyBytes = 16;
+    h->pageSizeInBytes = pageSizeInBytes;
+
+    // non - leaf
+    uint32_t sz_ptr = sizeof(uint32_t);
+    uint32_t per_key = h->nKeyBytes + sz_ptr;
+    uint32_t nk = (pageSizeInBytes - sizeof(PageHeader) - sz_ptr) / per_key;
+
+    // ensure nk is even
+    nk = nk & ~(unsigned int)0x01;
+
+    h->maxNumNLeafKeys = nk;
+    h->minNumNLeafKeys = nk / 2;
+
+
+    // leaf
+    uint32_t sz_user_data = sizeof(uint64_t);
+    per_key = h->nKeyBytes + sz_user_data;
+    h->maxNumLeafKeys = (pageSizeInBytes - sizeof(PageHeader)) / per_key;
+
+    return;
+}
+
 }
 
 

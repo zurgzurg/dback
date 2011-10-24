@@ -1127,7 +1127,7 @@ TC_BTree00::run()
     BTree b;
     IndexHeader ih;
     PageHeader ph;
-    PageAccess ac;
+    PageAccess pa;
     UUIDKey k;
     ErrorInfo err;
     bool ok;
@@ -1135,10 +1135,9 @@ TC_BTree00::run()
 
     ih.nKeyBytes = 16;
     ih.pageSizeInBytes = 4096;
-    ih.minNumLeafKeys = 0;
-    ih.maxNumLeafKeys = 0;
-    ih.minNumNLeafKeys = 0;
     ih.maxNumNLeafKeys = 0;
+    ih.minNumNLeafKeys = 0;
+    ih.maxNumLeafKeys = 0;
 
     ph.parentPageNum = 0;
     ph.numKeys = 0;
@@ -1146,17 +1145,56 @@ TC_BTree00::run()
     ph.pad0 = 0;
     ph.pad1 = 0;
 
-    ac.header = &ph;
-    ac.keys = NULL;
-    ac.childPtrs = NULL;
-    ac.values = NULL;
+    pa.header = &ph;
+    pa.keys = NULL;
+    pa.childPtrs = NULL;
+    pa.values = NULL;
 
     b.header = &ih;
-    b.root = &ac;
+    b.root = &pa;
 
-    ok = b.insertInLeaf(&ac, &k, &err);
+    ok = b.insertInLeaf(&pa, &k, &err);
     ASSERT_TRUE(ok == false);
     
+    this->setStatus(true);
+}
+
+}
+
+/************/
+
+namespace dback {
+
+struct TC_BTree01 : public TestCase {
+    TC_BTree01() : TestCase("TC_BTree01") {;};
+    void run();
+};
+
+void
+TC_BTree01::run()
+{
+    {
+	IndexHeader ih;
+
+	UUIDKey::initIndexHeader(&ih, 56);
+	ASSERT_TRUE(ih.nKeyBytes == 16);
+	ASSERT_TRUE(ih.pageSizeInBytes == 56);
+	ASSERT_TRUE(ih.maxNumNLeafKeys == 2);
+	ASSERT_TRUE(ih.minNumNLeafKeys == 1);
+	ASSERT_TRUE(ih.maxNumLeafKeys == 2);
+    }
+
+    {
+	IndexHeader ih;
+
+	UUIDKey::initIndexHeader(&ih, 80);
+	ASSERT_TRUE(ih.nKeyBytes == 16);
+	ASSERT_TRUE(ih.pageSizeInBytes == 80);
+	ASSERT_TRUE(ih.maxNumNLeafKeys == 2);
+	ASSERT_TRUE(ih.minNumNLeafKeys == 1);
+	ASSERT_TRUE(ih.maxNumLeafKeys == 3);
+    }
+
     this->setStatus(true);
 }
 
@@ -1191,6 +1229,7 @@ make_suite_all_tests()
     s->addTestCase(new TC_Serial15());
     
     s->addTestCase(new dback::TC_BTree00());
+    s->addTestCase(new dback::TC_BTree01());
 
     return s;
 }

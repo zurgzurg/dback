@@ -111,17 +111,16 @@ public:
     /// Size of page in bytes. Should be a multiple of fs block size.
     uint32_t pageSizeInBytes;
 
-    /// Each node will have at least this many keys.
-    uint32_t minNumLeafKeys;
-
-    /// Each node will have at most this many keys.
-    uint32_t maxNumLeafKeys;
-
-    /// Each node will have at least this many keys.
-    uint32_t minNumNLeafKeys;
-
-    /// Each node will have at most this many keys.
+ 
+   /// Each node will have at most this many keys.
     uint32_t maxNumNLeafKeys;
+
+    /// Each node will have at most this many keys.
+    uint32_t minNumNLeafKeys;
+ 
+
+    /// Each node will have at least this many keys.
+    uint32_t maxNumLeafKeys;
 };
 
 /**
@@ -220,7 +219,18 @@ public:
  */
 class UUIDKey : public KeyInterface {
 public:
+    /// Implement the required compare routine.
     int compare(const uint8_t *a, const uint8_t *b);
+
+    /**
+     * Convenience routine to init btree size params.
+     *
+     * @param [out] ih Header struct to store size values.
+     * @param [in] pageSize size of on disk pages, in bytes.
+     *
+     * Initialize all the size fields for an IndexHeader.
+     */
+    static void initIndexHeader(IndexHeader *ih, uint32_t pageSize);
 };
 
 class BTree {
@@ -228,25 +238,12 @@ public:
     IndexHeader *header;
     PageAccess *root;
     
-
-    void create();
-    void destroy();
-
-    void find();
-    void remove();
-    void insert();
-
-    void insertInNode();
-
     /**
      * Insert a key,value into a leaf node.
      *
      *
      */
     bool insertInLeaf(PageAccess *ac, KeyInterface *ki, ErrorInfo *err);
-
-    void split();
-    void join();
 };
 
 }
