@@ -1156,6 +1156,10 @@ TC_BTree00::run()
     ok = b.insertInLeaf(&pa, &k, &err);
     ASSERT_TRUE(ok == false);
     
+    ph.isLeaf = 0;
+    ok = b.insertInLeaf(&pa, &k, &err);
+    ASSERT_TRUE(ok == false);
+
     this->setStatus(true);
 }
 
