@@ -242,9 +242,26 @@ public:
     /**
      * Insert a key,value into a leaf node.
      *
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to insert into.
+     * @param [in] key Pointer to a the key to be inserted.
+     * @param [in] val The value to be inserted.
+     * @param [out] err If an error occurs this will contain error info.
      *
+     * Insert into a leaf page. This routine will check if there is enough
+     * space to insert the key without needing to overflow the page. If there
+     * is not enough space then false is returned and the page is not modified.
+     * If there is enough space the key is copied into the page at the proper
+     * location, the page values are modified, the user data val is copied,
+     * and true is returned.
+     *
+     * @return Return true if insert took place, false if insert could
+     * not be done. If false is returned the page is not modified.
      */
-    bool insertInLeaf(PageAccess *ac, ErrorInfo *err);
+    bool insertInLeaf(PageAccess *ac, uint8_t *key, uint64_t val,
+		      ErrorInfo *err);
+private:
+    size_t getLeafInsertIdx(PageAccess *ac, uint8_t *key);
 };
 
 }
