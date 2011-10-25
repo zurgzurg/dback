@@ -237,13 +237,14 @@ class BTree {
 public:
     IndexHeader *header;
     PageAccess *root;
+    KeyInterface *ki;
     
     /**
      * Insert a key,value into a leaf node.
      *
      *
      */
-    bool insertInLeaf(PageAccess *ac, KeyInterface *ki, ErrorInfo *err);
+    bool insertInLeaf(PageAccess *ac, ErrorInfo *err);
 };
 
 }
