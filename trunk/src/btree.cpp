@@ -10,7 +10,7 @@
 namespace dback {
 
 bool
-BTree::insertInLeaf(PageAccess *ac, ErrorInfo *err)
+BTree::insertInLeaf(PageAccess *ac, uint8_t *key, uint64_t val, ErrorInfo *err)
 {
     if (ac->header->isLeaf != 1)
 	return false;
