@@ -260,8 +260,30 @@ public:
      */
     bool insertInLeaf(PageAccess *ac, uint8_t *key, uint64_t val,
 		      ErrorInfo *err);
-private:
-    size_t getLeafInsertIdx(PageAccess *ac, uint8_t *key);
+
+    /**
+     * Return key index, where it should be store or where it is stored.
+     *
+     * @param [in] ac Pointer to info about a leaf page.
+     * @param [in] key The key to be inserted.
+     * @param [out] idx Key number where key is stored or should be stored.
+     *
+     * This is not a public API routine.
+     *
+     * Search the leaf for the key. Return true if the key is found,
+     * and store the position of the key in *idx. If the key is not
+     * found, return false, and store the position where the key should be
+     * inserted at *idx.
+     *
+     * Locking and thread safety are the responsibility of the caller.
+     *
+     * @note The return value is not the offset into the key array, rather
+     * it is the key index - it needs to be multiplied by the key size to
+     * find the actual byte offset.
+     *
+     * @result Return true if found, false otherwise.
+     */
+    bool findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx);
 };
 
 }

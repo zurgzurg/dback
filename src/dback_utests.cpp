@@ -1154,11 +1154,14 @@ TC_BTree00::run()
     b.root = &pa;
     b.ki = &k;
 
-    ok = b.insertInLeaf(&pa, &err);
+    uint8_t *key = NULL;
+    uint64_t val = 0;
+
+    ok = b.insertInLeaf(&pa, key, val, &err);
     ASSERT_TRUE(ok == false);
     
     ph.isLeaf = 0;
-    ok = b.insertInLeaf(&pa, &err);
+    ok = b.insertInLeaf(&pa, key, val, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
@@ -1205,6 +1208,53 @@ TC_BTree01::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree02 : public TestCase {
+    TC_BTree02() : TestCase("TC_BTree02") {;};
+    void run();
+};
+
+void
+TC_BTree02::run()
+{
+    uint8_t buf[4096];
+    BTree b;
+    PageAccess pa;
+    IndexHeader ih;
+    uint32_t idx;
+    bool found;
+    UUIDKey k;
+
+    UUIDKey::initIndexHeader(&ih, sizeof(buf));
+
+    uint8_t key[ ih.nKeyBytes ];
+
+    pa.header = reinterpret_cast<PageHeader *>(&buf[0]);
+    pa.keys = NULL;
+    pa.childPtrs = NULL;
+    pa.values = NULL;
+
+    b.header = &ih;
+    b.root = &pa;
+    b.ki = &k;
+
+    for (uint32_t i = 0; i < ih.nKeyBytes; i++)
+	key[i] = 0;
+
+    idx = 2;
+
+    found = b.findKeyPositionInLeaf(&pa, &key[0], &idx);
+    ASSERT_TRUE(found == false);
+    ASSERT_TRUE(idx == 0);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1235,6 +1285,7 @@ make_suite_all_tests()
     
     s->addTestCase(new dback::TC_BTree00());
     s->addTestCase(new dback::TC_BTree01());
+    s->addTestCase(new dback::TC_BTree02());
 
     return s;
 }
