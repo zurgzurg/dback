@@ -255,6 +255,8 @@ public:
      * location, the page values are modified, the user data val is copied,
      * and true is returned.
      *
+     * This function is thread safe.
+     *
      * @return Return true if insert took place, false if insert could
      * not be done. If false is returned the page is not modified.
      */
