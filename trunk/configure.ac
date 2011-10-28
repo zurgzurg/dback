@@ -19,6 +19,12 @@ AX_CXX_HAVE_STL
 AX_CXX_NAMESPACE_STD
 
 ###############################################################
+## boost needed for cross platform thread and filesystem stuff
+###############################################################
+AX_BOOST_BASE([],[boost_avail=yes],[boost_avail=no])
+AX_BOOST_THREAD
+
+###############################################################
 ## need ints of various sizes in c++
 ###############################################################
 AC_TYPE_INT8_T
@@ -97,6 +103,8 @@ echo ""
 echo "AS_HELP_STRING([Use multi-threading],[${mt_exec}])"
 echo "AS_HELP_STRING([Have C++ STL],[${ax_cv_cxx_have_stl}])"
 echo "AS_HELP_STRING([Have C++ namespaces],[${ax_cv_cxx_have_std_namespace}])"
+echo "AS_HELP_STRING([Have Boost base install],[${boost_avail}])"
+echo "AS_HELP_STRING([Have Boost thread],[${ax_cv_boost_thread}])"
 
 echo ""
 echo "Summary of optional items"
