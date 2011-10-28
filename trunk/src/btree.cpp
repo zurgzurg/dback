@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <string>
 
+#include <boost/thread/shared_mutex.hpp>
+
 #include <arpa/inet.h>
 
 #include "dback.h"
@@ -15,15 +17,29 @@ namespace dback {
 /****************************************************/
 /****************************************************/
 bool
-BTree::insertInLeaf(PageAccess *ac, uint8_t *key, uint64_t val, ErrorInfo *err)
+BTree::blockInsertInLeaf(boost::shared_mutex *l,
+			 PageAccess *ac,
+			 uint8_t *key,
+			 uint64_t val,
+			 ErrorInfo *err)
 {
-    if (ac->header->isLeaf != 1)
-	return false;
+    bool result;
 
-    if (ac->header->numKeys + 1 >= this->header->maxNumLeafKeys)
-	return false;
+    l->lock();
+
+    if (ac->header->isLeaf != 1) {
+	result = false;
+	goto out;
+    }
+
+    if (ac->header->numKeys + 1 >= this->header->maxNumLeafKeys) {
+	result = false;
+	goto out;
+    }
     
-    return true;
+out:
+    l->unlock();
+    return result;
 }
 
 bool

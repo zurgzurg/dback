@@ -6,9 +6,6 @@
 
 #include <inttypes.h>
 
-#include "dback.h"
-#include "btree.h"
-
 #include <cstdarg>
 #include <cstring>
 
@@ -20,9 +17,13 @@
 #include <iostream>
 #include <new>
 
-using namespace std;
+#include <boost/thread/shared_mutex.hpp>
 
 #include "dback.h"
+#include "btree.h"
+
+using namespace std;
+
 using namespace dback;
 
 /****************************************************/
@@ -1132,7 +1133,6 @@ TC_BTree00::run()
     ErrorInfo err;
     bool ok;
 
-
     ih.nKeyBytes = 16;
     ih.pageSizeInBytes = 4096;
     ih.maxNumNLeafKeys = 0;
@@ -1157,11 +1157,13 @@ TC_BTree00::run()
     uint8_t *key = NULL;
     uint64_t val = 0;
 
-    ok = b.insertInLeaf(&pa, key, val, &err);
+    boost::shared_mutex m;
+
+    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
     ASSERT_TRUE(ok == false);
     
     ph.isLeaf = 0;
-    ok = b.insertInLeaf(&pa, key, val, &err);
+    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);

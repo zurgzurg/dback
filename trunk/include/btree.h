@@ -240,27 +240,32 @@ public:
     KeyInterface *ki;
     
     /**
-     * Insert a key,value into a leaf node.
+     * Blocking insert, add a key and value into a leaf node.
      *
+     * @param [in] l shared lock
      * @param [in] ac Pointer to info about the particular leaf
      *                page to insert into.
      * @param [in] key Pointer to a the key to be inserted.
      * @param [in] val The value to be inserted.
      * @param [out] err If an error occurs this will contain error info.
      *
-     * Insert into a leaf page. This routine will check if there is enough
-     * space to insert the key without needing to overflow the page. If there
-     * is not enough space then false is returned and the page is not modified.
-     * If there is enough space the key is copied into the page at the proper
-     * location, the page values are modified, the user data val is copied,
-     * and true is returned.
-     *
-     * This function is thread safe.
+     * Blocking insert. This routine will block until it acquires an
+     * exclusive lock on l. After the lock is acquired, this routine will
+     * check if there is enough space to insert the key without
+     * needing to overflow the page. If there is not enough space then
+     * false is returned and the page is not modified.  If there is
+     * enough space the key is copied into the page at the proper
+     * location, the page values are modified, the user data val is
+     * copied, and true is returned.  In all cases the lock is
+     * released before returning.
      *
      * @return Return true if insert took place, false if insert could
      * not be done. If false is returned the page is not modified.
      */
-    bool insertInLeaf(PageAccess *ac, uint8_t *key, uint64_t val,
+    bool blockInsertInLeaf(boost::shared_mutex *l,
+		      PageAccess *ac,
+		      uint8_t *key,
+		      uint64_t val,
 		      ErrorInfo *err);
 
     /**

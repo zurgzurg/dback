@@ -8,13 +8,14 @@ bin_PROGRAMS = dback
 TESTS = dback_utests
 
 dback_SOURCES = dback.cpp
+dback_LDADD = @BOOST_LDFLAGS@ @BOOST_THREAD_LIB@
 
 lib_LTLIBRARIES = libdback.la
 libdback_la_SOURCES = $(lib_sources) dback.h
 libdback_la_CXXFLAGS = -I$(top_srcdir)/include
 
 dback_utests_SOURCES = dback_utests.cpp
-dback_utests_LDADD = libdback.la
+dback_utests_LDADD = libdback.la @BOOST_LDFLAGS@ @BOOST_THREAD_LIB@
 dback_utests_CXXFLAGS = -I$(top_srcdir)/include
 
 #################################
@@ -30,4 +31,4 @@ coverage/dback_utests.o $(gcov_lib_objs): coverage/%.o: %.cpp
 	g++ -c -g -O1 -o $@ -fprofile-arcs -ftest-coverage -I$(top_srcdir)/include $<
 
 coverage/dback_utests: coverage-stamp coverage/dback_utests.o $(gcov_lib_objs)
-	g++ -g -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs)
+	g++ -g -o $@ -fprofile-arcs -ftest-coverage coverage/dback_utests.o $(gcov_lib_objs) @BOOST_LDFLAGS@ @BOOST_THREAD_LIB@
