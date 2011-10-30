@@ -23,20 +23,46 @@ BTree::blockInsertInLeaf(boost::shared_mutex *l,
 			 uint64_t val,
 			 ErrorInfo *err)
 {
-    bool result;
+    uint32_t n_to_move, idx;
+    size_t bytes_to_move;
+    uint8_t *dst, *src;
+    bool found, result;
 
+    result = false;
     l->lock();
 
-    if (ac->header->isLeaf != 1) {
-	result = false;
+    if (ac->header->isLeaf != 1)
 	goto out;
+
+    if (ac->header->numKeys + 1 >= this->header->maxNumLeafKeys)
+	goto out;
+    
+
+    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    if (found == true)
+	goto out;
+
+
+    if (idx > 0 || ac->header->numKeys > 0) {
+	n_to_move = ac->header->numKeys - (idx + 1);
+	bytes_to_move = n_to_move * this->header->nKeyBytes;
+	dst = ac->keys + ((idx + 1) * this->header->nKeyBytes);
+	src = ac->keys + idx * this->header->nKeyBytes;
+	memmove(dst, src, bytes_to_move);
+
+	bytes_to_move = n_to_move * sizeof(uint64_t);
+	dst = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
+	src = reinterpret_cast<uint8_t *>(&ac->values[idx]);
+	memmove(dst, src, bytes_to_move);
     }
 
-    if (ac->header->numKeys + 1 >= this->header->maxNumLeafKeys) {
-	result = false;
-	goto out;
-    }
-    
+    dst = ac->keys + idx * this->header->nKeyBytes;
+    memcpy(dst, key, this->header->nKeyBytes);
+    ac->values[idx] = val;
+    ac->header->numKeys++;
+
+    result = true;
+
 out:
     l->unlock();
     return result;
@@ -52,7 +78,7 @@ BTree::findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx)
 	return false;
     }
     else if (ac->header->numKeys == 1) {
-	int c = this->ki->compare(key, 0);
+	int c = this->ki->compare(key, ac->keys);
 	if (c < 0) {
 	    *idx = 0;
 	    return false;
@@ -114,7 +140,47 @@ BTree::findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx)
 	    }
 	}
     }
+}
 
+void
+BTree::initPageAccess(PageAccess *ac, uint8_t *buf)
+{
+    ac->header = reinterpret_cast<PageHeader *>(buf);
+
+    if (ac->header->isLeaf) {
+	ac->keys = buf
+	    + sizeof(PageHeader)
+	    + this->header->maxNumLeafKeys * sizeof(uint32_t);
+
+	ac->childPtrs = NULL;
+
+	ac->values = reinterpret_cast<uint64_t *>(buf + sizeof(PageHeader));
+    }
+    else {
+	ac->keys = buf
+	    + sizeof(PageHeader)
+	    + this->header->maxNumNLeafKeys * sizeof(uint32_t);
+	ac->childPtrs = reinterpret_cast<uint32_t *>(buf + sizeof(PageHeader));
+	ac->values = NULL;
+    }
+
+    return;
+}
+
+void
+BTree::initLeafPage(uint8_t *buf)
+{
+    memset(buf, 0, this->header->pageSizeInBytes);
+    PageHeader *h = reinterpret_cast<PageHeader *>(buf);
+    h->isLeaf = 1;
+    return;
+}
+
+void
+BTree::initNonLeafPage(uint8_t *buf)
+{
+    memset(buf, 0, this->header->pageSizeInBytes);
+    return;
 }
 
 /****************************************************/

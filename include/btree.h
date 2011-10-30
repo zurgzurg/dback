@@ -81,12 +81,23 @@ namespace dback {
  * +-----------------------+---------+
  * | header|array of 32bit |array of |
  * |       |child ptrs     |keys     |
+ * |       | always max sz |         |   
  * +-----------------------+---------+
+ *
+ * @endverbatim
+ *
+ * The array of child pointers is a fixed size: the max number of keys
+ * the can fit into a non-leaf page. Therefore the offset of the key
+ * array will always be at the same position in all non-leaf pages.
+ *
+ * @verbatim
  *
  * Leaf Page
  * +--------------------+----------+
  * | header|array 64bit |array of  |
  * |       |user data   |keys      |
+ * |       |always max  |          |
+ * |       |size        |          |
  * +--------------------+----------+
  *
  * @endverbatim
@@ -95,7 +106,9 @@ namespace dback {
  * that the number of keys. The extra pointer is stored at the end of the
  * array.
  *
- *
+ * As in the case the non-leaf pages, the array of 64bit user data pointers
+ * is of fixed size - for the max number of keys that can fit into a leaf
+ * page. The offset of all key arrays in all leaf pages is the same.
  *
  */
 
@@ -234,6 +247,8 @@ public:
 };
 
 class BTree {
+private:
+
 public:
     IndexHeader *header;
     PageAccess *root;
@@ -259,9 +274,13 @@ public:
      * copied, and true is returned.  In all cases the lock is
      * released before returning.
      *
+     * If they key already exists in the node false is returned and the
+     * node is unmodified.
+     *
      * @return Return true if insert took place, false if insert could
      * not be done. If false is returned the page is not modified.
      */
+
     bool blockInsertInLeaf(boost::shared_mutex *l,
 		      PageAccess *ac,
 		      uint8_t *key,
@@ -291,6 +310,39 @@ public:
      * @result Return true if found, false otherwise.
      */
     bool findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx);
+
+    /**
+     * Init PageAccess pointers for a leaf node or non-leaf node.
+     *
+     * @param [in] ac The page access structure to be changed.
+     * @param [in] buf The raw page buffer.
+     *
+     * All fields of ac will be initialized to point into the
+     * the leaf/non-leaf buffer buf. The page buffer header is
+     * used to determine leaf/non-leaf status.
+     *
+     */
+    void initPageAccess(PageAccess *ac, uint8_t *buf);
+
+    /**
+     * Init leaf page.
+     *
+     * @param [in] buf The raw page buffer.
+     *
+     * Init a leaf page. In particular the page header flags are set.
+     *
+     */
+    void initLeafPage(uint8_t *buf);
+
+    /**
+     * Init non-leaf page.
+     *
+     * @param [in] buf The raw page buffer.
+     *
+     * Init a leaf page. In particular the page header flags are set.
+     *
+     */
+    void initNonLeafPage(uint8_t *buf);
 };
 
 }
