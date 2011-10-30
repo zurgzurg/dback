@@ -1257,6 +1257,99 @@ TC_BTree02::run()
 
 }
 
+/************/
+
+namespace dback {
+
+/**
+ * Simple test class for 1 byte keys.
+ */
+class ShortKey : public KeyInterface {
+public:
+    int compare(const uint8_t *a, const uint8_t *b);
+    void initIndexHeader(IndexHeader *ih, uint32_t pageSize);
+};
+
+int
+ShortKey::compare(const uint8_t *a, const uint8_t *b)
+{
+    if (*a < *b)
+	return -1;
+    else if (*a > *b)
+	return 1;
+    return 0;
+}
+
+void
+ShortKey::initIndexHeader(IndexHeader *ih, uint32_t pageSize)
+{
+    size_t hdr_size = sizeof(PageHeader);
+    size_t ptr_size = sizeof(uint32_t);
+    size_t data_size = sizeof(uint64_t);
+    size_t key_size = 1;
+
+    ih->nKeyBytes = key_size;
+    ih->pageSizeInBytes = pageSize;
+                          // (pgsize - 8) / 5
+    ih->maxNumNLeafKeys = (pageSize - hdr_size) / (key_size + ptr_size);
+
+    ih->minNumNLeafKeys = ih->maxNumNLeafKeys / 2;
+
+                          // (pgsize - 8) / 9
+    ih->maxNumLeafKeys = (pageSize - hdr_size) / (key_size + data_size);
+
+    return;
+}
+
+struct TC_BTree03 : public TestCase {
+    TC_BTree03() : TestCase("TC_BTree03") {;};
+    void run();
+};
+
+void
+TC_BTree03::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys > 1);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    uint8_t a_key[ih.nKeyBytes];
+    memset(&a_key[0], 99, sizeof(a_key));
+
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val = 97;
+    bool ok;
+
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    ASSERT_TRUE(ok == true);
+
+    uint32_t idx = 5;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key[0], &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.values[idx] == 97);
+    ASSERT_TRUE(pa.keys[0] == 99);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1288,6 +1381,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree00());
     s->addTestCase(new dback::TC_BTree01());
     s->addTestCase(new dback::TC_BTree02());
+    s->addTestCase(new dback::TC_BTree03());
 
     return s;
 }
