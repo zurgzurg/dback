@@ -277,6 +277,9 @@ public:
      * If they key already exists in the node false is returned and the
      * node is unmodified.
      *
+     * @note Not yet known how splitting will be handled when the leaf
+     * node is full.
+     *
      * @return Return true if insert took place, false if insert could
      * not be done. If false is returned the page is not modified.
      */
@@ -295,6 +298,15 @@ public:
      *                page to delete from.
      * @param [in] key Pointer to a the key to be deleted.
      * @param [out] err If an error occurs this will contain error info.
+     *
+     * Blocking delete. Delete a key from the leaf node. Return true iff
+     * delete succeeds, false otherwise. When false is returned the node
+     * is not modified. Routine will block until it acquires an exclusive
+     * lock on l. Lock is released at end of routine. This routine will
+     * delete the last key from a node.
+     *
+     * @note Underflow (removing all keys) and node joining is not
+     * yet handled.
      *
      * @return Return true if a key was deleted, or return false if
      * the delete could not be done. If false is returned the node
