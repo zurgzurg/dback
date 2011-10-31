@@ -288,6 +288,24 @@ public:
 		      ErrorInfo *err);
 
     /**
+     * Blocking delete, remove a key from a leaf node.
+     *
+     * @param [in] l shared lock
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to delete from.
+     * @param [in] key Pointer to a the key to be deleted.
+     * @param [out] err If an error occurs this will contain error info.
+     *
+     * @return Return true if a key was deleted, or return false if
+     * the delete could not be done. If false is returned the node
+     * is not modified.
+     */
+    bool blockDeleteFromLeaf(boost::shared_mutex *l,
+			     PageAccess *ac,
+			     uint8_t *key,
+			     ErrorInfo *err);
+
+    /**
      * Return key index, where it should be store or where it is stored.
      *
      * @param [in] ac Pointer to info about a leaf page.
