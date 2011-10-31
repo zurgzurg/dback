@@ -1345,6 +1345,75 @@ TC_BTree03::run()
     ASSERT_TRUE(pa.values[idx] == 97);
     ASSERT_TRUE(pa.keys[0] == 99);
 
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
+/************/
+
+namespace dback {
+
+struct TC_BTree04 : public TestCase {
+    TC_BTree04() : TestCase("TC_BTree04") {;};
+    void run();
+};
+
+void
+TC_BTree04::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val;
+    bool ok;
+    uint32_t idx;
+
+    val = 1;
+    a_key = 1;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 2;
+    a_key = 2;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 1;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.values[idx] == 1);
+ 
+    a_key = 2;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 1);
+    ASSERT_TRUE(pa.values[idx] == 2);
+
     this->setStatus(true);
 }
 
@@ -1382,6 +1451,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree01());
     s->addTestCase(new dback::TC_BTree02());
     s->addTestCase(new dback::TC_BTree03());
+    s->addTestCase(new dback::TC_BTree04());
 
     return s;
 }
