@@ -34,7 +34,7 @@ BTree::blockInsertInLeaf(boost::shared_mutex *l,
     if (ac->header->isLeaf != 1)
 	goto out;
 
-    if (ac->header->numKeys + 1 >= this->header->maxNumLeafKeys)
+    if (ac->header->numKeys + 1 > this->header->maxNumLeafKeys)
 	goto out;
     
 
@@ -44,7 +44,7 @@ BTree::blockInsertInLeaf(boost::shared_mutex *l,
 
 
     if (idx > 0 || ac->header->numKeys > 0) {
-	n_to_move = ac->header->numKeys - (idx + 1);
+	n_to_move = ac->header->numKeys - idx;
 	bytes_to_move = n_to_move * this->header->nKeyBytes;
 	dst = ac->keys + ((idx + 1) * this->header->nKeyBytes);
 	src = ac->keys + idx * this->header->nKeyBytes;
@@ -150,7 +150,7 @@ BTree::initPageAccess(PageAccess *ac, uint8_t *buf)
     if (ac->header->isLeaf) {
 	ac->keys = buf
 	    + sizeof(PageHeader)
-	    + this->header->maxNumLeafKeys * sizeof(uint32_t);
+	    + this->header->maxNumLeafKeys * sizeof(uint64_t);
 
 	ac->childPtrs = NULL;
 
