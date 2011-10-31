@@ -1419,6 +1419,175 @@ TC_BTree04::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree05 : public TestCase {
+    TC_BTree05() : TestCase("TC_BTree05") {;};
+    void run();
+};
+
+void
+TC_BTree05::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val;
+    bool ok;
+    uint32_t idx;
+
+    val = 2;
+    a_key = 2;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 1;
+    a_key = 1;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 2;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 1);
+    ASSERT_TRUE(pa.values[idx] == 2);
+ 
+    a_key = 1;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.values[idx] == 1);
+
+    a_key = 0;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 3;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
+/************/
+
+namespace dback {
+
+struct TC_BTree06 : public TestCase {
+    TC_BTree06() : TestCase("TC_BTree06") {;};
+    void run();
+};
+
+void
+TC_BTree06::run()
+{
+    ShortKey k;
+    // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val;
+    bool ok;
+    uint32_t idx;
+
+    val = 10;
+    a_key = 10;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 5;
+    a_key = 5;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 3;
+    a_key = 3;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 5;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 1);
+    ASSERT_TRUE(pa.values[idx] == 5);
+
+    a_key = 10;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 2);
+    ASSERT_TRUE(pa.values[idx] == 10);
+
+    a_key = 3;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.values[idx] == 3);
+
+    a_key = 0;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 11;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 4;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 6;
+    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1452,6 +1621,8 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree02());
     s->addTestCase(new dback::TC_BTree03());
     s->addTestCase(new dback::TC_BTree04());
+    s->addTestCase(new dback::TC_BTree05());
+    s->addTestCase(new dback::TC_BTree06());
 
     return s;
 }
