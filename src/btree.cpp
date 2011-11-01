@@ -69,6 +69,46 @@ out:
 }
 
 bool
+BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
+			   PageAccess *ac,
+			   uint8_t *key,
+			   ErrorInfo *err)
+{
+    bool result, found;
+    uint32_t idx, n_to_move;
+    size_t bytes_to_move;
+    uint8_t *dst, *src;
+
+    result = false;
+    l->lock();
+
+    if (ac->header->numKeys == 0)
+	goto out;
+
+    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    if (found == false)
+	goto out;
+
+    n_to_move = ac->header->numKeys - idx;
+    bytes_to_move = n_to_move * this->header->nKeyBytes;
+    dst = ac->keys + idx * this->header->nKeyBytes;
+    src = ac->keys + (idx + 1) * this->header->nKeyBytes;
+    memmove(dst, src, bytes_to_move);
+
+    bytes_to_move = n_to_move * sizeof(uint64_t);
+    dst = reinterpret_cast<uint8_t *>(&ac->values[idx]);
+    src = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
+    memmove(dst, src, bytes_to_move);
+
+    ac->header->numKeys--;
+    result = true;
+
+out:
+    l->unlock();
+    return result;
+}
+
+bool
 BTree::findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx)
 {
     size_t n1, n2, n, ks;

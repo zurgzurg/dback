@@ -299,11 +299,12 @@ public:
      * @param [in] key Pointer to a the key to be deleted.
      * @param [out] err If an error occurs this will contain error info.
      *
-     * Blocking delete. Delete a key from the leaf node. Return true iff
-     * delete succeeds, false otherwise. When false is returned the node
-     * is not modified. Routine will block until it acquires an exclusive
-     * lock on l. Lock is released at end of routine. This routine will
-     * delete the last key from a node.
+     * Blocking delete. Routine will block until it acquires an
+     * exclusive lock on l. Lock is released at end of routine. Delete
+     * a key from the leaf node. Return true iff delete succeeds,
+     * false otherwise. When false is returned the node is not
+     * modified. This routine will delete the last key from a node.
+     * Routine returns false if there are no more elements in the node.
      *
      * @note Underflow (removing all keys) and node joining is not
      * yet handled.
