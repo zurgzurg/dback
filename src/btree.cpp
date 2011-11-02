@@ -89,16 +89,18 @@ BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
     if (found == false)
 	goto out;
 
-    n_to_move = ac->header->numKeys - idx;
-    bytes_to_move = n_to_move * this->header->nKeyBytes;
-    dst = ac->keys + idx * this->header->nKeyBytes;
-    src = ac->keys + (idx + 1) * this->header->nKeyBytes;
-    memmove(dst, src, bytes_to_move);
+    if (ac->header->numKeys > 1) {
+	n_to_move = ac->header->numKeys - idx;
+	bytes_to_move = n_to_move * this->header->nKeyBytes;
+	dst = ac->keys + idx * this->header->nKeyBytes;
+	src = ac->keys + (idx + 1) * this->header->nKeyBytes;
+	memmove(dst, src, bytes_to_move);
 
-    bytes_to_move = n_to_move * sizeof(uint64_t);
-    dst = reinterpret_cast<uint8_t *>(&ac->values[idx]);
-    src = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
-    memmove(dst, src, bytes_to_move);
+	bytes_to_move = n_to_move * sizeof(uint64_t);
+	dst = reinterpret_cast<uint8_t *>(&ac->values[idx]);
+	src = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
+	memmove(dst, src, bytes_to_move);
+    }
 
     ac->header->numKeys--;
     result = true;
