@@ -1588,6 +1588,74 @@ TC_BTree06::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree07 : public TestCase {
+    TC_BTree07() : TestCase("TC_BTree07") {;};
+    void run();
+};
+
+void
+TC_BTree07::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val;
+    bool ok;
+    uint32_t idx;
+
+    val = 2;
+    a_key = 2;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 1;
+    a_key = 1;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 2;
+    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == true);
+
+    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+    
+    a_key = 1;
+    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == true);
+
+    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1623,6 +1691,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree04());
     s->addTestCase(new dback::TC_BTree05());
     s->addTestCase(new dback::TC_BTree06());
+    s->addTestCase(new dback::TC_BTree07());
 
     return s;
 }
