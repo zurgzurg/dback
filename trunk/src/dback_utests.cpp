@@ -6,6 +6,8 @@
 
 #include <inttypes.h>
 
+#include <pthread.h>
+
 #include <cstdarg>
 #include <cstring>
 
@@ -1658,8 +1660,106 @@ TC_BTree07::run()
 
 /************/
 
-/**** Need a test with multiple threads ***/
+namespace dback {
 
+
+static void *tc_btree08_do_insert(void *);
+static void *tc_btree08_do_delete(void *);
+
+struct TC_BTree08 : public TestCase {
+    BTree b;
+    boost::shared_mutex l;
+    PageAccess pa;
+    
+    TC_BTree08() : TestCase("TC_BTree08") {;};
+    void run();
+};
+
+void
+TC_BTree08::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    this->b.header = &ih;
+    this->b.root = NULL;
+    this->b.ki = &k;
+
+    uint8_t buf[bufsize];
+    this->b.initLeafPage(&buf[0]);
+
+    this->b.initPageAccess(&this->pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    pthread_attr_t a;
+    int err;
+    
+    err = pthread_attr_init(&a);
+    ASSERT_TRUE(err == 0);
+    err = pthread_attr_setdetachstate(&a, PTHREAD_CREATE_JOINABLE);
+    ASSERT_TRUE(err == 0);
+    
+    pthread_t t1, t2;
+    err = pthread_create(&t1, &a, tc_btree08_do_delete, this);
+    ASSERT_TRUE(err == 0);
+    err = pthread_create(&t2, &a, tc_btree08_do_insert, this);
+    ASSERT_TRUE(err == 0);
+
+    void *junk;
+    err = pthread_join(t1, &junk);
+    ASSERT_TRUE(err == 0);
+    err = pthread_join(t2, &junk);
+    ASSERT_TRUE(err == 0);
+
+    this->setStatus(true);
+}
+
+static void *
+tc_btree08_do_insert(void *ptr)
+{
+    static int count = 0;
+    uint8_t key;
+    bool ok;
+    uint64_t val;
+    ErrorInfo err;
+
+    TC_BTree08 *tc = reinterpret_cast<TC_BTree08 *>(ptr);
+    key = 1;
+    val = 1;
+    while (count < 5) {
+	ok = tc->b.blockInsertInLeaf(&tc->l, &tc->pa, &key, val, &err);
+	if (ok)
+	    count++;
+    }
+    
+    return NULL;
+}
+
+static void *
+tc_btree08_do_delete(void *ptr)
+{
+    static int count = 0;
+    bool ok;
+    ErrorInfo err;
+    uint8_t key;
+
+    TC_BTree08 *tc = reinterpret_cast<TC_BTree08 *>(ptr);
+    key = 1;
+    while (count < 5) {
+	ok = tc->b.blockDeleteFromLeaf(&tc->l, &tc->pa, &key, &err) ;
+	if (ok)
+	    count++;
+    }
+
+    return NULL;
+}
+
+}
 
 /****************************************************/
 /* top level                                        */
@@ -1697,6 +1797,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree05());
     s->addTestCase(new dback::TC_BTree06());
     s->addTestCase(new dback::TC_BTree07());
+    s->addTestCase(new dback::TC_BTree08());
 
     return s;
 }
