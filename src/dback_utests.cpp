@@ -1236,7 +1236,9 @@ TC_BTree02::run()
 
     uint8_t key[ ih.nKeyBytes ];
 
+    memset(&buf[0], 0, sizeof(buf));
     pa.header = reinterpret_cast<PageHeader *>(&buf[0]);
+    pa.header->isLeaf = 1;
     pa.keys = NULL;
     pa.childPtrs = NULL;
     pa.values = NULL;
