@@ -19,7 +19,7 @@
 #include <iostream>
 #include <new>
 
-#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread.hpp>
 
 #include "dback.h"
 #include "btree.h"
@@ -1852,9 +1852,10 @@ main(int argc, const char **argv)
     if (result.n_run == result.n_pass
 	&& result.n_fail == 0
 	&& result.n_exceptions == 0)
-	return 0;
+	pthread_exit(NULL);
   
-    return 1;
+    pthread_exit(NULL);
+    return 0; /* */
 }
 
 /*

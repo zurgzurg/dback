@@ -2,7 +2,7 @@
 #include <cstddef>
 #include <string>
 
-#include <boost/thread/shared_mutex.hpp>
+#include <boost/thread.hpp>
 
 #include <arpa/inet.h>
 
