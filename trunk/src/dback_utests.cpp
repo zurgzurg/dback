@@ -1763,6 +1763,98 @@ tc_btree08_do_delete(void *ptr)
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree09 : public TestCase {
+    TC_BTree09() : TestCase("TC_BTree09") {;};
+    void run();
+};
+
+void
+TC_BTree09::run()
+{
+    ShortKey k;
+    // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val;
+    bool ok;
+    uint32_t idx;
+
+    val = 10;
+    a_key = 10;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 5;
+    a_key = 5;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    val = 3;
+    a_key = 3;
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key, val, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 5;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(val == 5);
+
+    a_key = 10;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(val == 10);
+
+    a_key = 3;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(val == 3);
+
+    a_key = 0;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 11;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 4;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 6;
+    ok = b.blockFindInLeaf(&l, &pa, &a_key, &val, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1800,6 +1892,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree06());
     s->addTestCase(new dback::TC_BTree07());
     s->addTestCase(new dback::TC_BTree08());
+    s->addTestCase(new dback::TC_BTree09());
 
     return s;
 }

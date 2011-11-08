@@ -17,6 +17,35 @@ namespace dback {
 /****************************************************/
 /****************************************************/
 bool
+BTree::blockFindInLeaf(boost::shared_mutex *l,
+		       PageAccess *ac,
+		       uint8_t *key,
+		       uint64_t *val,
+		       ErrorInfo *err)
+{
+    bool result, found;
+    uint32_t idx;
+
+    result = false;
+    l->lock_shared();
+
+    if (ac->header->isLeaf != 1)
+	goto out;
+    
+    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    if (found == false)
+	goto out;
+
+    if (val != NULL)
+	*val = ac->values[idx];
+    result = true;
+
+out:
+    l->unlock_shared();
+    return result;
+}
+
+bool
 BTree::blockInsertInLeaf(boost::shared_mutex *l,
 			 PageAccess *ac,
 			 uint8_t *key,
