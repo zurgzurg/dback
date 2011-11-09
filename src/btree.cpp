@@ -17,6 +17,56 @@ namespace dback {
 /****************************************************/
 /****************************************************/
 bool
+BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
+			    PageAccess *ac,
+			    uint8_t *key,
+			    uint32_t child,
+			    ErrorInfo *err)
+{
+    bool result, found;
+    size_t bytes_to_move;
+    uint32_t idx, n_to_move;
+    uint8_t *dst, *src;
+
+    result = false;
+    l->lock();
+    
+    if (ac->header->isLeaf != 0)
+	goto out;
+
+    if (ac->header->numKeys + 1 > this->header->maxNumNLeafKeys)
+	goto out;
+
+    found = this->findKeyPosition(ac, key, &idx);
+    if (found == true)
+	goto out;
+
+    if (idx > 0 || ac->header->numKeys > 0) {
+	n_to_move = ac->header->numKeys - idx;
+	bytes_to_move = n_to_move * this->header->nKeyBytes;
+	dst = ac->keys + ((idx + 1) * this->header->nKeyBytes);
+	src = ac->keys + idx * this->header->nKeyBytes;
+	memmove(dst, src, bytes_to_move);
+
+	bytes_to_move = n_to_move * sizeof(uint32_t);
+	dst = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx + 1]);
+	src = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx]);
+	memmove(dst, src, bytes_to_move);
+    }
+
+    dst = ac->keys + idx * this->header->nKeyBytes;
+    memcpy(dst, key, this->header->nKeyBytes);
+    ac->childPtrs[idx] = child;
+    ac->header->numKeys++;
+
+    result = true;
+
+out:
+    l->unlock();
+    return result;
+}
+
+bool
 BTree::blockFindInLeaf(boost::shared_mutex *l,
 		       PageAccess *ac,
 		       uint8_t *key,
@@ -32,7 +82,7 @@ BTree::blockFindInLeaf(boost::shared_mutex *l,
     if (ac->header->isLeaf != 1)
 	goto out;
     
-    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    found = this->findKeyPosition(ac, key, &idx);
     if (found == false)
 	goto out;
 
@@ -67,7 +117,7 @@ BTree::blockInsertInLeaf(boost::shared_mutex *l,
 	goto out;
     
 
-    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    found = this->findKeyPosition(ac, key, &idx);
     if (found == true)
 	goto out;
 
@@ -114,7 +164,7 @@ BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
     if (ac->header->numKeys == 0)
 	goto out;
 
-    found = this->findKeyPositionInLeaf(ac, key, &idx);
+    found = this->findKeyPosition(ac, key, &idx);
     if (found == false)
 	goto out;
 
@@ -140,7 +190,7 @@ out:
 }
 
 bool
-BTree::findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx)
+BTree::findKeyPosition(PageAccess *ac, uint8_t *key, uint32_t *idx)
 {
     size_t n1, n2, n, ks;
 

@@ -1252,7 +1252,7 @@ TC_BTree02::run()
 
     idx = 2;
 
-    found = b.findKeyPositionInLeaf(&pa, &key[0], &idx);
+    found = b.findKeyPosition(&pa, &key[0], &idx);
     ASSERT_TRUE(found == false);
     ASSERT_TRUE(idx == 0);
 
@@ -1343,7 +1343,7 @@ TC_BTree03::run()
     ASSERT_TRUE(ok == true);
 
     uint32_t idx = 5;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key[0], &idx);
+    ok = b.findKeyPosition(&pa, &a_key[0], &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
     ASSERT_TRUE(pa.values[idx] == 97);
@@ -1407,13 +1407,13 @@ TC_BTree04::run()
     ASSERT_TRUE(ok == true);
 
     a_key = 1;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
     ASSERT_TRUE(pa.values[idx] == 1);
  
     a_key = 2;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
     ASSERT_TRUE(pa.values[idx] == 2);
@@ -1473,23 +1473,23 @@ TC_BTree05::run()
     ASSERT_TRUE(ok == true);
 
     a_key = 2;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
     ASSERT_TRUE(pa.values[idx] == 2);
  
     a_key = 1;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
     ASSERT_TRUE(pa.values[idx] == 1);
 
     a_key = 0;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     a_key = 3;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
@@ -1554,37 +1554,37 @@ TC_BTree06::run()
     ASSERT_TRUE(ok == true);
 
     a_key = 5;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
     ASSERT_TRUE(pa.values[idx] == 5);
 
     a_key = 10;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 2);
     ASSERT_TRUE(pa.values[idx] == 10);
 
     a_key = 3;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
     ASSERT_TRUE(pa.values[idx] == 3);
 
     a_key = 0;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     a_key = 11;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     a_key = 4;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     a_key = 6;
-    ok = b.findKeyPositionInLeaf(&pa, &a_key, &idx);
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
@@ -1855,6 +1855,73 @@ TC_BTree09::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree10 : public TestCase {
+    TC_BTree10() : TestCase("TC_BTree10") {;};
+    void run();
+};
+
+void
+TC_BTree10::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys > 1);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initNonLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint32_t child;
+    bool ok;
+    uint32_t idx;
+
+    child = 1;
+    a_key = 1;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    child = 2;
+    a_key = 2;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 1;
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.childPtrs[idx] == 1);
+ 
+    a_key = 2;
+    ok = b.findKeyPosition(&pa, &a_key, &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 1);
+    ASSERT_TRUE(pa.childPtrs[idx] == 2);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1893,6 +1960,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree07());
     s->addTestCase(new dback::TC_BTree08());
     s->addTestCase(new dback::TC_BTree09());
+    s->addTestCase(new dback::TC_BTree10());
 
     return s;
 }
