@@ -1991,6 +1991,98 @@ TC_BTree11::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree12 : public TestCase {
+    TC_BTree12() : TestCase("TC_BTree12") {;};
+    void run();
+};
+
+void
+TC_BTree12::run()
+{
+    ShortKey k;
+    // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initNonLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint32_t child;
+    bool ok;
+    uint32_t idx;
+
+    child = 10;
+    a_key = 10;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    child = 5;
+    a_key = 5;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    child = 3;
+    a_key = 3;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 5;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(child == 5);
+
+    a_key = 10;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(child == 10);
+
+    a_key = 3;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(child == 3);
+
+    a_key = 0;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 11;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 4;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == false);
+
+    a_key = 6;
+    ok = b.blockFindInNonLeaf(&l, &pa, &a_key, &child, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2031,6 +2123,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree09());
     s->addTestCase(new dback::TC_BTree10());
     s->addTestCase(new dback::TC_BTree11());
+    s->addTestCase(new dback::TC_BTree12());
 
     return s;
 }
