@@ -306,7 +306,7 @@ TestSuite::run(TestResult *result, TestOption *opt)
 	    TestFailure::setUnwindDone();
 	    if (opt->verbose)
 		cout << "    caught test fail exception\n";
-	    result->tests_e.push_back( tc->name + e.what() );
+	    result->tests_e.push_back( tc->name + string(" ") + e.what() );
 	    result->n_exceptions++;
 	}
 	if (opt->verbose)
@@ -1922,6 +1922,75 @@ TC_BTree10::run()
 
 }
 
+
+/************/
+
+namespace dback {
+
+struct TC_BTree11 : public TestCase {
+    TC_BTree11() : TestCase("TC_BTree11") {;};
+    void run();
+};
+
+void
+TC_BTree11::run()
+{
+    ShortKey k;
+    const size_t bufsize = 28;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initNonLeafPage(&buf[0]);
+
+    PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    ASSERT_TRUE(ih.nKeyBytes == 1);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint32_t child;
+    bool ok;
+    uint32_t idx;
+
+    child = 2;
+    a_key = 2;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    child = 1;
+    a_key = 1;
+    ok = b.blockInsertInNonLeaf(&l, &pa, &a_key, child, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 2;
+    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == true);
+
+    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+    
+    a_key = 1;
+    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == true);
+
+    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -1961,6 +2030,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree08());
     s->addTestCase(new dback::TC_BTree09());
     s->addTestCase(new dback::TC_BTree10());
+    s->addTestCase(new dback::TC_BTree11());
 
     return s;
 }
