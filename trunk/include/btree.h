@@ -254,9 +254,6 @@ public:
     PageAccess *root;
     KeyInterface *ki;
     
-    
-
-
     /**
      * Blocking insert, add a key and child ptr into a non leaf node.
      *
@@ -291,7 +288,6 @@ public:
 			      uint32_t child,
 			      ErrorInfo *err);
 
-
     /**
      * Blocking delete, remove a key from a non-leaf node.
      *
@@ -321,6 +317,32 @@ public:
 
 
 
+
+    /**
+     * Blocking find, search for a key in a non leaf node.
+     *
+     * @param [in] l shared lock
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to insert into.
+     * @param [in] key Pointer to a the key to be inserted.
+     * @param [out] child Pointer to store associated value.
+     * @param [out] err If an error occurs this will contain error info.
+     *
+     * Blocking find. This routine will block until it acquires a
+     * shared lock on l. After the lock is acquired, this routine will
+     * search for the key. If not found false is returned and nothing is
+     * writtent to memory pointed to by child. If the key is found true
+     * will be returned. If child is not null the associated value will be
+     * written to the memory pointed to by child.
+     *
+     * @return Return true if found. False otherwise.
+     */
+
+    bool blockFindInNonLeaf(boost::shared_mutex *l,
+			    PageAccess *ac,
+			    uint8_t *key,
+			    uint32_t *child,
+			    ErrorInfo *err);
 
 
 

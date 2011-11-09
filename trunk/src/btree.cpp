@@ -112,6 +112,35 @@ out:
 }
 
 bool
+BTree::blockFindInNonLeaf(boost::shared_mutex *l,
+			  PageAccess *ac,
+			  uint8_t *key,
+			  uint32_t *child,
+			  ErrorInfo *err)
+{
+    bool result, found;
+    uint32_t idx;
+
+    result = false;
+    l->lock_shared();
+
+    if (ac->header->isLeaf != 0)
+	goto out;
+    
+    found = this->findKeyPosition(ac, key, &idx);
+    if (found == false)
+	goto out;
+
+    if (child != NULL)
+	*child = ac->childPtrs[idx];
+    result = true;
+
+out:
+    l->unlock_shared();
+    return result;
+}
+
+bool
 BTree::blockFindInLeaf(boost::shared_mutex *l,
 		       PageAccess *ac,
 		       uint8_t *key,
