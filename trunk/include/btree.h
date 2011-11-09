@@ -255,6 +255,50 @@ public:
     KeyInterface *ki;
     
     
+
+
+    /**
+     * Blocking insert, add a key and child ptr into a non leaf node.
+     *
+     * @param [in] l shared lock
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to insert into.
+     * @param [in] key Pointer to a the key to be inserted.
+     * @param [in] child The child pointer to be inserted.
+     * @param [out] err If an error occurs this will contain error info.
+     *
+     * Blocking insert. This routine will block until it acquires an
+     * exclusive lock on l. After the lock is acquired, this routine
+     * will check if there is enough space to insert the key without
+     * needing to overflow the page. If there is not enough space then
+     * false is returned and the page is not modified.  If there is
+     * enough space the key is copied into the page at the proper
+     * location, the associated child ptrs are modified, and true is
+     * returned.  In all cases the lock is released before returning.
+     *
+     * If they key already exists in the node false is returned and the
+     * node is unmodified.
+     *
+     * @note Not yet known how splitting will be handled.
+     *
+     * @return Return true if insert took place, false if insert could
+     * not be done. If false is returned the page is not modified.
+     */
+
+    bool blockInsertInNonLeaf(boost::shared_mutex *l,
+			      PageAccess *ac,
+			      uint8_t *key,
+			      uint32_t child,
+			      ErrorInfo *err);
+
+
+
+
+
+
+
+
+
     /**
      * Blocking find, search for a key in a leaf node.
      *
@@ -312,10 +356,10 @@ public:
      */
 
     bool blockInsertInLeaf(boost::shared_mutex *l,
-		      PageAccess *ac,
-		      uint8_t *key,
-		      uint64_t val,
-		      ErrorInfo *err);
+			   PageAccess *ac,
+			   uint8_t *key,
+			   uint64_t val,
+			   ErrorInfo *err);
 
     /**
      * Blocking delete, remove a key from a leaf node.
@@ -355,10 +399,12 @@ public:
      *
      * This is not a public API routine.
      *
-     * Search the leaf for the key. Return true if the key is found,
-     * and store the position of the key in *idx. If the key is not
-     * found, return false, and store the position where the key should be
-     * inserted at *idx.
+     * The node can be a leaf or non-leaf node.
+     *
+     * Search the key array fo the key. Return true if the key is
+     * found, and store the position of the key in *idx. If the key is
+     * not found, return false, and store the position where the key
+     * should be inserted at *idx.
      *
      * Locking and thread safety are the responsibility of the caller.
      *
@@ -368,7 +414,7 @@ public:
      *
      * @result Return true if found, false otherwise.
      */
-    bool findKeyPositionInLeaf(PageAccess *ac, uint8_t *key, uint32_t *idx);
+    bool findKeyPosition(PageAccess *ac, uint8_t *key, uint32_t *idx);
 
     /**
      * Init PageAccess pointers for a leaf node or non-leaf node.
