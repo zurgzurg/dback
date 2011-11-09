@@ -292,6 +292,36 @@ public:
 			      ErrorInfo *err);
 
 
+    /**
+     * Blocking delete, remove a key from a non-leaf node.
+     *
+     * @param [in] l shared lock
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to delete from.
+     * @param [in] key Pointer to a the key to be deleted.
+     * @param [out] err If an error occurs this will contain error info.
+     *
+     * Blocking delete. Routine will block until it acquires an
+     * exclusive lock on l. Lock is released at end of routine. Delete
+     * a key from the non-leaf node. Return true iff delete succeeds,
+     * false otherwise. When false is returned the node is not
+     * modified. This routine will delete the last key from a node, in
+     * this case it is up to the caller to decide what to do with the
+     * now empty non-leaf node.  Routine returns false if there are no
+     * more elements in the node.
+     *
+     * @return Return true if a key was deleted, or return false if
+     * the delete could not be done. If false is returned the node
+     * is not modified.
+     */
+    bool blockDeleteFromNonLeaf(boost::shared_mutex *l,
+				PageAccess *ac,
+				uint8_t *key,
+				ErrorInfo *err);
+
+
+
+
 
 
 
