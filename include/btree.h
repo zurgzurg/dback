@@ -345,11 +345,7 @@ public:
 			    ErrorInfo *err);
 
 
-
-
-
-
-
+    /********************************************************/
 
     /**
      * Blocking find, search for a key in a leaf node.
@@ -467,6 +463,41 @@ public:
      * @result Return true if found, false otherwise.
      */
     bool findKeyPosition(PageAccess *ac, uint8_t *key, uint32_t *idx);
+
+
+    /********************************************************/
+
+    /**
+     * Split a leaf node.
+     *
+     * @param [in,out] full   The full leaf node to split.
+     * @param [in,out] empty  The empty leaf node to use.
+     * @param [out] key       The key to promote to higher node.
+     * @param [out] err       Error info output.
+     *
+     * Split a leaf node into two leaf nodes, return true if successful.
+     * The full node must be full, else false is returned. The empty node
+     * must be empty else false is returned. Both nodes, full and empty,
+     * must be leaf nodes, else false is returned. key must be non-null,
+     * else false is returned, and it must point to a buffer large enough
+     * to store a key.
+     *
+     * The full page will be split into two, with keys moved into the
+     * empty page. A suitable 'middle' key from full will be chosen,
+     * and copied into the buffer pointed to by key. All keys and
+     * associated values greater than or equal to key will be copied
+     * to empty.
+     *
+     * If false is returned full and empty are unchanged.
+     *
+     * @note Locking is the callers responsibility.
+     *
+     * @result true if leaf successfully split, false otherwise.
+     */
+    bool splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
+		   ErrorInfo *err);
+
+    /********************************************************/
 
     /**
      * Init PageAccess pointers for a leaf node or non-leaf node.

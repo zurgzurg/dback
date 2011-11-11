@@ -340,6 +340,24 @@ BTree::findKeyPosition(PageAccess *ac, uint8_t *key, uint32_t *idx)
     }
 }
 
+bool
+BTree::splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
+		 ErrorInfo *err)
+{
+    if (full == NULL
+	|| full->header->isLeaf != 1
+	|| full->header->numKeys != this->header->maxNumLeafKeys)
+	return false;
+    if (empty == NULL
+	|| empty->header->isLeaf != 1
+	|| empty->header->numKeys != 0)
+	return false;
+    if (key == NULL)
+	return false;
+
+    return true;
+}
+
 void
 BTree::initPageAccess(PageAccess *ac, uint8_t *buf)
 {
