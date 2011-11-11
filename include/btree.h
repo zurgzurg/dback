@@ -199,15 +199,6 @@ public:
 };
 
 /**
- * Used to report error status and messages.
- */
-class ErrorInfo {
-public:
-    bool haveError;
-    std::string message;
-};
-
-/**
  * Used to abstract a key.
  *
  * This is a pure virtual base class. Any class that wants to be

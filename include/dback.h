@@ -8,6 +8,23 @@ class Message;
 class SerialBuffer;
 
 /**
+ * Used to report error status and messages.
+ */
+class ErrorInfo {
+public:
+    enum ErrKind {
+	ERR_BAD_ARG,
+	ERR_UNKNOWN
+    };
+
+    ErrKind errorNum;
+    bool haveError;
+    std::string message;
+
+    void setErrNum(ErrKind);
+};
+
+/**
  * Base class to support serialization.
  *
  * All objects that are intended to be serialized should derive
