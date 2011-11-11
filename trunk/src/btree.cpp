@@ -31,11 +31,17 @@ BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
     result = false;
     l->lock();
     
-    if (ac->header->isLeaf != 0)
+    if (ac->header->isLeaf != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
 
-    if (ac->header->numKeys + 1 > this->header->maxNumNLeafKeys)
+    if (ac->header->numKeys + 1 > this->header->maxNumNLeafKeys) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("page full");
 	goto out;
+    }
 
     found = this->findKeyPosition(ac, key, &idx);
     if (found == true)

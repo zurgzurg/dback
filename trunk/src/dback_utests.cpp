@@ -2083,6 +2083,59 @@ TC_BTree12::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree13 : public TestCase {
+    TC_BTree13() : TestCase("TC_BTree13") {;};
+    void run();
+};
+
+void
+TC_BTree13::run()
+{
+    ShortKey k;
+    // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t leaf_buf[bufsize];
+    b.initLeafPage(&leaf_buf[0]);
+    uint8_t non_leaf_buf[bufsize];
+    b.initNonLeafPage(&non_leaf_buf[0]);
+
+    PageAccess pa_leaf;
+    b.initPageAccess(&pa_leaf, &leaf_buf[0]);
+    PageAccess pa_non_leaf;
+    b.initPageAccess(&pa_non_leaf, &non_leaf_buf[0]);
+
+    uint8_t a_key;
+    ErrorInfo err;
+    boost::shared_mutex l;
+    bool ok;
+
+    a_key = 10;
+    ok = b.blockInsertInNonLeaf(&l, &pa_leaf, &a_key, 1, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+    ASSERT_TRUE(err.haveError == true);
+
+    this->setStatus(true);
+}
+
+}
+
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2124,6 +2177,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree10());
     s->addTestCase(new dback::TC_BTree11());
     s->addTestCase(new dback::TC_BTree12());
+    s->addTestCase(new dback::TC_BTree13());
 
     return s;
 }
