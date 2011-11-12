@@ -267,6 +267,9 @@ public:
      * If they key already exists in the node false is returned and the
      * node is unmodified.
      *
+     * If true is returned the error object is not modified. Otherwise
+     * it will contain information about the failure.
+     * 
      * @note Not yet known how splitting will be handled.
      *
      * @return Return true if insert took place, false if insert could

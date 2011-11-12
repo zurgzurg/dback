@@ -2125,11 +2125,39 @@ TC_BTree13::run()
     bool ok;
 
     a_key = 10;
+
     ok = b.blockInsertInNonLeaf(&l, &pa_leaf, &a_key, 1, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.message.length() > 0);
+
+    err.errorNum = ErrorInfo::ERR_UNKNOWN;
+    err.haveError = false;
+    err.message.clear();
+
+    a_key = 0;
+    ok = true;
+    while (ok) {
+	ok = b.blockInsertInNonLeaf(&l, &pa_non_leaf, &a_key, 1, &err);
+	if (ok)
+	    a_key++;
+    }
+
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_NODE_FULL);
+    ASSERT_TRUE(err.message.find("full") != std::string::npos);
+
+    a_key = 0;
+    ok = b.blockDeleteFromNonLeaf(&l, &pa_non_leaf, &a_key, &err);
+    ASSERT_TRUE(ok == true);
+
+    a_key = 1;
+    ok = b.blockInsertInNonLeaf(&l, &pa_non_leaf, &a_key, 1, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_DUPLICATE_INSERT);
+    ASSERT_TRUE(err.message.find("duplicate") != std::string::npos);
 
     this->setStatus(true);
 }

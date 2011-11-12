@@ -38,14 +38,17 @@ BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
     }
 
     if (ac->header->numKeys + 1 > this->header->maxNumNLeafKeys) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->setErrNum(ErrorInfo::ERR_NODE_FULL);
 	err->message.assign("page full");
 	goto out;
     }
 
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == true)
+    if (found == true) {
+	err->setErrNum(ErrorInfo::ERR_DUPLICATE_INSERT);
+	err->message.assign("attempt to insert duplicate key");
 	goto out;
+    }
 
     if (idx > 0 || ac->header->numKeys > 0) {
 	n_to_move = ac->header->numKeys - idx;
