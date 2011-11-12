@@ -18,4 +18,12 @@ ErrorInfo::setErrNum(ErrKind k)
     this->haveError = true;
 }
 
+void
+ErrorInfo::clear()
+{
+    this->errorNum = ERR_UNKNOWN;
+    this->haveError = false;
+    this->message.clear();
+}
+
 }

@@ -15,7 +15,9 @@ public:
     enum ErrKind {
 	ERR_BAD_ARG,
 	ERR_NODE_FULL,
+	ERR_NODE_EMPTY,
 	ERR_DUPLICATE_INSERT,
+	ERR_KEY_NOT_FOUND,
 	ERR_UNKNOWN
     };
 
@@ -24,6 +26,7 @@ public:
     std::string message;
 
     void setErrNum(ErrKind);
+    void clear();
 };
 
 /**

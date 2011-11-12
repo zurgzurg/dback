@@ -89,15 +89,24 @@ BTree::blockDeleteFromNonLeaf(boost::shared_mutex *l,
     result = false;
     l->lock();
 
-    if (ac->header->isLeaf != 0)
+    if (ac->header->isLeaf != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
 
-    if (ac->header->numKeys == 0)
+    if (ac->header->numKeys == 0) {
+	err->setErrNum(ErrorInfo::ERR_NODE_EMPTY);
+	err->message.assign("node is empty");
 	goto out;
+    }
 
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == false)
+    if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
 	goto out;
+    }
 
     if (ac->header->numKeys > 1) {
 	n_to_move = ac->header->numKeys - idx;
@@ -133,12 +142,16 @@ BTree::blockFindInNonLeaf(boost::shared_mutex *l,
     result = false;
     l->lock_shared();
 
-    if (ac->header->isLeaf != 0)
+    if (ac->header->isLeaf != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
     
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == false)
+    if (found == false) {
 	goto out;
+    }
 
     if (child != NULL)
 	*child = ac->childPtrs[idx];
@@ -162,12 +175,16 @@ BTree::blockFindInLeaf(boost::shared_mutex *l,
     result = false;
     l->lock_shared();
 
-    if (ac->header->isLeaf != 1)
+    if (ac->header->isLeaf != 1) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
     
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == false)
+    if (found == false) {
 	goto out;
+    }
 
     if (val != NULL)
 	*val = ac->values[idx];
@@ -193,16 +210,25 @@ BTree::blockInsertInLeaf(boost::shared_mutex *l,
     result = false;
     l->lock();
 
-    if (ac->header->isLeaf != 1)
+    if (ac->header->isLeaf != 1) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
 
-    if (ac->header->numKeys + 1 > this->header->maxNumLeafKeys)
+    if (ac->header->numKeys + 1 > this->header->maxNumLeafKeys) {
+	err->setErrNum(ErrorInfo::ERR_NODE_FULL);
+	err->message.assign("page full");
 	goto out;
+    }
     
 
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == true)
+    if (found == true) {
+	err->setErrNum(ErrorInfo::ERR_DUPLICATE_INSERT);
+	err->message.assign("attempt to insert duplicate key");
 	goto out;
+    }
 
 
     if (idx > 0 || ac->header->numKeys > 0) {
@@ -244,15 +270,24 @@ BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
     result = false;
     l->lock();
 
-    if (ac->header->isLeaf != 1)
+    if (ac->header->isLeaf != 1) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("wrong page type");
 	goto out;
+    }
 
-    if (ac->header->numKeys == 0)
+    if (ac->header->numKeys == 0) {
+	err->setErrNum(ErrorInfo::ERR_NODE_EMPTY);
+	err->message.assign("node is empty");
 	goto out;
+    }
 
     found = this->findKeyPosition(ac, key, &idx);
-    if (found == false)
+    if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
 	goto out;
+    }
 
     if (ac->header->numKeys > 1) {
 	n_to_move = ac->header->numKeys - idx;
