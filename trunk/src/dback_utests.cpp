@@ -2129,6 +2129,7 @@ TC_BTree13::run()
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
     ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.message.length() > 0);
 
     this->setStatus(true);
 }
