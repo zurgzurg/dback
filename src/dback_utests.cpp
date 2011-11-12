@@ -2123,41 +2123,91 @@ TC_BTree13::run()
     ErrorInfo err;
     boost::shared_mutex l;
     bool ok;
+    uint32_t child;
+    uint64_t data;
 
     a_key = 10;
 
+    err.clear();
     ok = b.blockInsertInNonLeaf(&l, &pa_leaf, &a_key, 1, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.message.length() > 0);
 
-    err.errorNum = ErrorInfo::ERR_UNKNOWN;
-    err.haveError = false;
-    err.message.clear();
+    err.clear();
+    ok = b.blockInsertInLeaf(&l, &pa_non_leaf, &a_key, 1, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.message.length() > 0);
+
+
+    err.clear();
+    ok = b.blockFindInNonLeaf(&l, &pa_leaf, &a_key, &child, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+    ASSERT_TRUE(err.message.length() > 0);
+
+    err.clear();
+    ok = b.blockFindInLeaf(&l, &pa_non_leaf, &a_key, &data, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+    ASSERT_TRUE(err.message.length() > 0);
 
     a_key = 0;
     ok = true;
     while (ok) {
+	err.clear();
 	ok = b.blockInsertInNonLeaf(&l, &pa_non_leaf, &a_key, 1, &err);
 	if (ok)
 	    a_key++;
     }
-
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_NODE_FULL);
     ASSERT_TRUE(err.message.find("full") != std::string::npos);
 
+    err.clear();
     a_key = 0;
     ok = b.blockDeleteFromNonLeaf(&l, &pa_non_leaf, &a_key, &err);
     ASSERT_TRUE(ok == true);
 
+    err.clear();
+    a_key = 0;
+    ok = b.blockDeleteFromNonLeaf(&l, &pa_leaf, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
     a_key = 1;
     ok = b.blockInsertInNonLeaf(&l, &pa_non_leaf, &a_key, 1, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_DUPLICATE_INSERT);
     ASSERT_TRUE(err.message.find("duplicate") != std::string::npos);
+    
+    a_key = 0;
+    ok = true;
+    while (ok) {
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &pa_leaf, &a_key, 1, &err);
+	if (ok)
+	    a_key++;
+    }
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_NODE_FULL);
+    ASSERT_TRUE(err.message.find("full") != std::string::npos);
+
+    err.clear();
+    a_key = 0;
+    ok = b.blockDeleteFromLeaf(&l, &pa_non_leaf, &a_key, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.haveError == true);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+    ASSERT_TRUE(err.message.length() > 0);
 
     this->setStatus(true);
 }
