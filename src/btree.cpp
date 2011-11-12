@@ -390,14 +390,23 @@ BTree::splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
 {
     if (full == NULL
 	|| full->header->isLeaf != 1
-	|| full->header->numKeys != this->header->maxNumLeafKeys)
+	|| full->header->numKeys != this->header->maxNumLeafKeys) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
 	return false;
+    }
     if (empty == NULL
 	|| empty->header->isLeaf != 1
-	|| empty->header->numKeys != 0)
+	|| empty->header->numKeys != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
 	return false;
-    if (key == NULL)
+    }
+    if (key == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
 	return false;
+    }
 
     return true;
 }
