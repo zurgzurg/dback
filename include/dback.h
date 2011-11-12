@@ -14,6 +14,8 @@ class ErrorInfo {
 public:
     enum ErrKind {
 	ERR_BAD_ARG,
+	ERR_NODE_FULL,
+	ERR_DUPLICATE_INSERT,
 	ERR_UNKNOWN
     };
 
