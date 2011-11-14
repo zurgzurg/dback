@@ -432,6 +432,8 @@ public:
 			     ErrorInfo *err);
 
 
+    /********************************************************/
+
     /**
      * Return key index, where it should be store or where it is stored.
      *

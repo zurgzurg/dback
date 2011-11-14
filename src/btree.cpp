@@ -183,6 +183,8 @@ BTree::blockFindInLeaf(boost::shared_mutex *l,
     
     found = this->findKeyPosition(ac, key, &idx);
     if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
 	goto out;
     }
 
@@ -407,6 +409,30 @@ BTree::splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
 	err->message.assign("invalid input");
 	return false;
     }
+
+    size_t bytes;
+    uint64_t *vsrc;
+    uint8_t *src, *dst;
+    uint32_t move_start_idx = full->header->numKeys / 2;
+    uint32_t n_to_move = full->header->numKeys - move_start_idx;
+
+    bytes = n_to_move * this->header->nKeyBytes;
+    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    dst = empty->keys;
+    memmove(dst, src, bytes);
+
+    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    memmove(key, src, this->header->nKeyBytes);
+
+    bytes = n_to_move * sizeof(uint64_t);
+    vsrc = full->values + move_start_idx * sizeof(uint64_t);
+    src = reinterpret_cast<uint8_t *>(vsrc);
+    dst = reinterpret_cast<uint8_t *>(empty->values);
+    memmove(dst, src, bytes);
+
+    empty->header->numKeys = n_to_move;
+    full->header->numKeys = move_start_idx;
+
 
     return true;
 }
