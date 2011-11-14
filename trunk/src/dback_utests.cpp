@@ -2306,6 +2306,89 @@ TC_BTree14::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree15 : public TestCase {
+    TC_BTree15() : TestCase("TC_BTree15") {;};
+    void run();
+};
+
+void
+TC_BTree15::run()
+{
+    ShortKey k;
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[bufsize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[bufsize];
+    b.initLeafPage(&buf2[0]);
+
+    PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+
+    uint64_t val;
+    uint8_t key, mid;
+    ErrorInfo err;
+    bool ok;
+    boost::shared_mutex l;
+
+    key = 0;
+    val = 0;
+    while (true) {
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p1, &key, val, &err);
+	if (!ok)
+	    break;
+	key++;
+	val++;
+    }
+    ASSERT_TRUE(key == ih.maxNumLeafKeys);
+
+    ok = b.splitLeaf(&p1, &p2, &mid, &err);
+    ASSERT_TRUE(ok == true);
+    
+    for (uint8_t k2 = 0; k2 < mid; k2++) {
+	ok = b.blockFindInLeaf(&l, &p1, &k2, &val, &err);
+	ASSERT_TRUE(ok == true);
+    }
+    for (uint8_t k2 = mid; k2 < ih.maxNumLeafKeys; k2++) {
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p1, &k2, &val, &err);
+	ASSERT_TRUE(ok == false);
+	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
+    }
+
+    for (uint8_t k2 = 0; k2 < mid; k2++) {
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p2, &k2, &val, &err);
+	ASSERT_TRUE(ok == false);
+	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
+    }
+    for (uint8_t k2 = mid; k2 < ih.maxNumLeafKeys; k2++) {
+	ok = b.blockFindInLeaf(&l, &p2, &k2, &val, &err);
+	ASSERT_TRUE(ok == true);
+    }
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2349,6 +2432,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree12());
     s->addTestCase(new dback::TC_BTree13());
     s->addTestCase(new dback::TC_BTree14());
+    s->addTestCase(new dback::TC_BTree15());
 
     return s;
 }
