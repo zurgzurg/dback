@@ -437,6 +437,59 @@ BTree::splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
     return true;
 }
 
+bool
+BTree::splitNonLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
+		    ErrorInfo *err)
+{
+    if (full == NULL
+	|| full->header->isLeaf != 0
+	|| full->header->numKeys != this->header->maxNumNLeafKeys) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+    if (empty == NULL
+	|| empty->header->isLeaf != 0
+	|| empty->header->numKeys != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+    if (key == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+#if 0
+    size_t bytes;
+    uint32_t *child_src;
+    uint8_t *src, *dst;
+    uint32_t move_start_idx = full->header->num xxx Keys / 2;
+    uint32_t n_to_move = full->header->numKeys - move_start_idx;
+
+    bytes = n_to_move * this->header->nKeyBytes;
+    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    dst = empty->keys;
+    memmove(dst, src, bytes);
+
+    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    memmove(key, src, this->header->nKeyBytes);
+
+    bytes = n_to_move * sizeof(uint64_t);
+    vsrc = full->values + move_start_idx * sizeof(uint64_t);
+    src = reinterpret_cast<uint8_t *>(vsrc);
+    dst = reinterpret_cast<uint8_t *>(empty->values);
+    memmove(dst, src, bytes);
+
+    empty->header->numKeys = n_to_move;
+    full->header->numKeys = move_start_idx;
+#endif
+
+
+    return true;
+}
+
 void
 BTree::initPageAccess(PageAccess *ac, uint8_t *buf)
 {
