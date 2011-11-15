@@ -2389,6 +2389,98 @@ TC_BTree15::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree16 : public TestCase {
+    TC_BTree16() : TestCase("TC_BTree16") {;};
+    void run();
+};
+
+void
+TC_BTree16::run()
+{
+    ShortKey k;
+    // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
+    const size_t bufsize = 35;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumNLeafKeys >= 2);
+    ASSERT_TRUE(ih.minNumNLeafKeys > 0);
+    ASSERT_TRUE(ih.maxNumLeafKeys >= 3);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t nl_b1[bufsize];
+    b.initNonLeafPage(&nl_b1[0]);
+    uint8_t nl_b2[bufsize];
+    b.initNonLeafPage(&nl_b2[0]);
+
+    uint8_t l_b3[bufsize];
+    b.initLeafPage(&l_b3[0]);
+    uint8_t l_b4[bufsize];
+    b.initLeafPage(&l_b4[0]);
+
+    PageAccess nl_pa1;
+    b.initPageAccess(&nl_pa1, &nl_b1[0]);
+    PageAccess nl_pa2;
+    b.initPageAccess(&nl_pa2, &nl_b2[0]);
+    PageAccess l_pa3;
+    b.initPageAccess(&l_pa3, &l_b3[0]);
+    PageAccess l_pa4;
+    b.initPageAccess(&l_pa4, &l_b4[0]);
+
+    uint8_t key;
+    ErrorInfo err;
+    bool ok;
+    boost::shared_mutex l;
+
+    err.clear();
+    ok = b.splitNonLeaf(NULL, &l_pa3, &key, &err);
+    ASSERT_TRUE(ok == false);
+
+    err.clear();
+    ok = b.splitNonLeaf(&l_pa3, &l_pa3, &key, &err);
+    ASSERT_TRUE(ok == false);
+
+    err.clear();
+    ok = b.splitNonLeaf(&nl_pa1, &l_pa3, &key, &err);
+    ASSERT_TRUE(ok == false);
+
+    uint32_t child;
+
+    key = 0;
+    child = 0;
+    while (true) {
+	err.clear();
+	ok = b.blockInsertInNonLeaf(&l, &nl_pa1, &key, child, &err);
+	if (!ok)
+	    break;
+	key++;
+	child++;
+    }
+
+    err.clear();
+    ok = b.splitNonLeaf(&nl_pa1, NULL, &key, &err);
+    ASSERT_TRUE(ok == false);
+
+    err.clear();
+    ok = b.splitNonLeaf(&nl_pa1, &l_pa3, &key, &err);
+    ASSERT_TRUE(ok == false);
+
+    err.clear();
+    ok = b.splitNonLeaf(&nl_pa1, &nl_pa2, NULL, &err);
+    ASSERT_TRUE(ok == false);
+    
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2433,6 +2525,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree13());
     s->addTestCase(new dback::TC_BTree14());
     s->addTestCase(new dback::TC_BTree15());
+    s->addTestCase(new dback::TC_BTree16());
 
     return s;
 }
