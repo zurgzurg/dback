@@ -150,6 +150,8 @@ BTree::blockFindInNonLeaf(boost::shared_mutex *l,
     
     found = this->findKeyPosition(ac, key, &idx);
     if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
 	goto out;
     }
 
@@ -461,11 +463,10 @@ BTree::splitNonLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
 	return false;
     }
 
-#if 0
     size_t bytes;
     uint32_t *child_src;
     uint8_t *src, *dst;
-    uint32_t move_start_idx = full->header->num xxx Keys / 2;
+    uint32_t move_start_idx = this->header->minNumNLeafKeys;
     uint32_t n_to_move = full->header->numKeys - move_start_idx;
 
     bytes = n_to_move * this->header->nKeyBytes;
@@ -476,16 +477,14 @@ BTree::splitNonLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
     src = full->keys + move_start_idx * this->header->nKeyBytes;
     memmove(key, src, this->header->nKeyBytes);
 
-    bytes = n_to_move * sizeof(uint64_t);
-    vsrc = full->values + move_start_idx * sizeof(uint64_t);
-    src = reinterpret_cast<uint8_t *>(vsrc);
-    dst = reinterpret_cast<uint8_t *>(empty->values);
+    bytes = n_to_move * sizeof(uint32_t);
+    child_src = full->childPtrs + move_start_idx * sizeof(uint32_t);
+    src = reinterpret_cast<uint8_t *>(child_src);
+    dst = reinterpret_cast<uint8_t *>(empty->childPtrs);
     memmove(dst, src, bytes);
 
     empty->header->numKeys = n_to_move;
     full->header->numKeys = move_start_idx;
-#endif
-
 
     return true;
 }

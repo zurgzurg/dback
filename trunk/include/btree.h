@@ -125,14 +125,14 @@ public:
     uint32_t pageSizeInBytes;
 
  
-   /// Each node will have at most this many keys.
+   /// Max key capacity of a non-leaf node.
     uint32_t maxNumNLeafKeys;
 
     /// Each node will have at most this many keys.
     uint32_t minNumNLeafKeys;
  
 
-    /// Each node will have at least this many keys.
+    /// Max key capacity of a leaf node.
     uint32_t maxNumLeafKeys;
 };
 
