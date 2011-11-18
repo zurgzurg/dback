@@ -531,6 +531,42 @@ public:
     /********************************************************/
 
     /**
+     * Concatenate two leaf nodes.
+     *
+     * @param [in,out] dst The destination.
+     * @param [in]     src The source node.
+     * @param [in]     dstIsFirst Indicates node ordering.
+     * @param [out]    err Error info output.
+     *
+     * Concatenate two lead nodes into one. The final result will be
+     * stored in node dst. src and dst are expected to be two adjascent
+     * nodes - that is they both have the same parent and the child node
+     * pointers that refer to them are next to each other. dstIsFirst
+     * indicates which keys are "smaller" than the other. If dstIsFirst
+     * is true then the keys in dst are all less than the keys in src,
+     * if false the keys in dst are all larger than src.
+     *
+     * The total number of keys in src and dst must be less than or
+     * equal to the max number of keys.
+     *
+     * true will be returned only if the two nodes are properly merged.
+     * otherwise false is returned, the error condition will be set,
+     * and input nodes are not not modified. When properly merged src
+     * will have no keys and dst will have all keys.
+     * 
+     * If src or dst is null false is returned. If there are too many
+     * keys false is returned.
+     *
+     *
+     * @note Locking is the callers responsibility.
+     *
+     */
+    bool concatLeaf(PageAccess *dst, PageAccess *src, bool dstIsFirst,
+		    ErrorInfo *err);
+
+    /********************************************************/
+
+    /**
      * Init PageAccess pointers for a leaf node or non-leaf node.
      *
      * @param [in] ac The page access structure to be changed.
