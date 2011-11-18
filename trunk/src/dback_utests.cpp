@@ -23,6 +23,7 @@
 
 #include "dback.h"
 #include "btree.h"
+#include "btree2.h"
 
 using namespace std;
 
