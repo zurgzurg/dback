@@ -388,6 +388,8 @@ BTree::findKeyPosition(PageAccess *ac, uint8_t *key, uint32_t *idx)
     }
 }
 
+/********************************************************/
+
 bool
 BTree::splitLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
 		 ErrorInfo *err)
@@ -488,6 +490,59 @@ BTree::splitNonLeaf(PageAccess *full, PageAccess *empty, uint8_t *key,
 
     return true;
 }
+
+/********************************************************/
+
+bool
+BTree::concatLeaf(PageAccess *dst, PageAccess *src, bool dstIsFirst,
+		  ErrorInfo *err)
+{
+    if (dst == NULL || src == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    if (dst->header->numKeys + src->header->numKeys
+	> this->header->maxNumLeafKeys) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    size_t dst_idx, bytes_to_move;
+
+    if ( ! dstIsFirst) {
+	size_t slots_needed = src->header->numKeys;
+	uint64_t *val_dst = dst->values + slots_needed;
+	bytes_to_move = dst->header->numKeys * sizeof(uint64_t);
+	memmove(val_dst, dst->values, bytes_to_move);
+
+	uint8_t *key_dst = dst->keys + slots_needed * this->header->nKeyBytes;
+	bytes_to_move = dst->header->numKeys * this->header->nKeyBytes;
+	memmove(key_dst, dst->keys, bytes_to_move);
+
+	dst_idx = 0;
+    }
+    else {
+	dst_idx = dst->header->numKeys;
+    }
+
+    uint8_t *key_dst = dst->keys + dst_idx * this->header->nKeyBytes;
+    bytes_to_move = src->header->numKeys * this->header->nKeyBytes;
+    memmove(key_dst, src->keys, bytes_to_move);
+
+    uint64_t *val_dst = dst->values + dst_idx;
+    bytes_to_move = src->header->numKeys * sizeof(uint64_t);
+    memmove(val_dst, src->values, bytes_to_move);
+
+    dst->header->numKeys += src->header->numKeys;
+    src->header->numKeys = 0;
+
+    return true;
+}
+
+/********************************************************/
 
 void
 BTree::initPageAccess(PageAccess *ac, uint8_t *buf)

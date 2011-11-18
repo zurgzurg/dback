@@ -2564,6 +2564,205 @@ TC_BTree17::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTree18 : public TestCase {
+    TC_BTree18() : TestCase("TC_BTree18") {;};
+    void run();
+};
+
+void
+TC_BTree18::run()
+{
+    const int n_keys = 20;
+    const size_t bufsize = sizeof(PageHeader)
+	+ n_keys * (sizeof(uint64_t) + 1); /* keysize */
+    ShortKey k;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumLeafKeys == n_keys);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[bufsize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[bufsize];
+    b.initLeafPage(&buf2[0]);
+
+    PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+
+    uint64_t val;
+    uint8_t key;
+    ErrorInfo err;
+    bool ok;
+    boost::shared_mutex l;
+
+    key = 0;
+    val = 0;
+    while (key < 15) {
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p1, &key, val, &err);
+	ASSERT_TRUE(ok == true);
+	ok = b.blockInsertInLeaf(&l, &p2, &key, val, &err);
+	ASSERT_TRUE(ok == true);
+	key++;
+	val++;
+    }
+
+    bool dstIsFirst = true;
+
+    err.clear();
+    ok = b.concatLeaf(NULL, &p2, dstIsFirst, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
+    ok = b.concatLeaf(&p1, NULL, dstIsFirst, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
+    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    this->setStatus(true);
+}
+
+}
+
+/************/
+
+namespace dback {
+
+struct TC_BTree19 : public TestCase {
+    TC_BTree19() : TestCase("TC_BTree19") {;};
+    void run();
+};
+
+void
+TC_BTree19::run()
+{
+    const int n_keys = 20;
+    const size_t bufsize = sizeof(PageHeader)
+	+ n_keys * (sizeof(uint64_t) + 1); /* keysize */
+    ShortKey k;
+    IndexHeader ih;
+    k.initIndexHeader(&ih, bufsize);
+    ASSERT_TRUE(ih.maxNumLeafKeys == n_keys);
+
+    BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[bufsize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[bufsize];
+    b.initLeafPage(&buf2[0]);
+
+    PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+
+    uint64_t val;
+    uint8_t key, key2;
+    ErrorInfo err;
+    bool ok;
+    boost::shared_mutex l;
+
+    key = 0;
+    val = 0;
+    while (key < 10) {
+
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p1, &key, val, &err);
+	ASSERT_TRUE(ok == true);
+
+	key2 = key + 100;
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p2, &key2, val, &err);
+	ASSERT_TRUE(ok == true);
+
+	key++;
+	val++;
+    }
+
+    bool dstIsFirst = true;
+
+    err.clear();
+    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(p2.header->numKeys == 0);
+    ASSERT_TRUE(p1.header->numKeys == 20);
+
+    for (key = 0; key < 10; key++) {
+	key2 = key + 100;
+
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p1, &key, &val, &err);
+	ASSERT_TRUE(ok == true);
+
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p1, &key2, &val, &err);
+	ASSERT_TRUE(ok == true);
+    }
+
+    p1.header->numKeys = 0;
+    p2.header->numKeys = 0;
+
+    key = 0;
+    val = 0;
+    while (key < 10) {
+
+	key2 = key + 100;
+
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p1, &key2, val, &err);
+	ASSERT_TRUE(ok == true);
+
+	err.clear();
+	ok = b.blockInsertInLeaf(&l, &p2, &key, val, &err);
+	ASSERT_TRUE(ok == true);
+
+	key++;
+	val++;
+    }
+    
+    dstIsFirst = false;
+
+    err.clear();
+    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(p2.header->numKeys == 0);
+    ASSERT_TRUE(p1.header->numKeys == 20);
+
+    for (key = 0; key < 10; key++) {
+	key2 = key + 100;
+
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p1, &key, &val, &err);
+	ASSERT_TRUE(ok == true);
+
+	err.clear();
+	ok = b.blockFindInLeaf(&l, &p1, &key2, &val, &err);
+	ASSERT_TRUE(ok == true);
+    }
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2610,6 +2809,8 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree15());
     s->addTestCase(new dback::TC_BTree16());
     s->addTestCase(new dback::TC_BTree17());
+    s->addTestCase(new dback::TC_BTree18());
+    s->addTestCase(new dback::TC_BTree19());
 
     return s;
 }
