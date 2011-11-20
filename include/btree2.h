@@ -1,11 +1,11 @@
-#ifndef _BTREE2_H_
-#define _BTREE2_H_
+#ifndef _BTREER2_H_
+#define _BTREER2_H_
 
 namespace dback {
 
 
 /**
- * @page btree2 Overview of BTree implementation.
+ * @page btreeR2 Overview of BTree implementation.
  *
  * This B-Tree is modeled on the B+-Tree as described
  * in "The Ubiquitous B-Tree" by Douglas Comer, Computing
@@ -116,7 +116,7 @@ namespace dback {
 /**
  * Holds meta data about a particular btree index.
  */
-class IndexHeader2 {
+class R2IndexHeader {
 public:
     /// Size of key in bytes.
     uint32_t nKeyBytes;
@@ -142,7 +142,7 @@ public:
  * Describes the kind of page - leaf or non-leaf. Also has
  * links to parent.
  */
-class PageHeader2 {
+class R2PageHeader {
 public:
     /// Page number of this nodes parent. Unused in root node.
     uint32_t parentPageNum;
@@ -163,10 +163,10 @@ public:
 /**
  * Used to access a node or leaf page.
  */
-class PageAccess2 {
+class R2PageAccess {
 public:
     /// pointer to page header
-    PageHeader2 *header;
+    R2PageHeader *header;
 
     /**
      * Pointer to array of keys.
@@ -205,7 +205,7 @@ public:
  * used as a key should inherit from this class and implement the
  * compare method.
  */
-class KeyInterface2 {
+class R2KeyInterface {
 public:
     /**
      * Compare two keys.
@@ -221,7 +221,7 @@ public:
  * Convenience class to use a UUID as a key.
  *
  */
-class UUIDKey2 : public KeyInterface2 {
+class R2UUIDKey : public R2KeyInterface {
 public:
     /// Implement the required compare routine.
     int compare(const uint8_t *a, const uint8_t *b);
@@ -237,13 +237,13 @@ public:
     static void initIndexHeader(IndexHeader2 *ih, uint32_t pageSize);
 };
 
-class BTree2 {
+class R2BTree {
 private:
 
 public:
-    IndexHeader2 *header;
-    PageAccess2 *root;
-    KeyInterface2 *ki;
+    R2IndexHeader *header;
+    R2PageAccess *root;
+    R2KeyInterface *ki;
     
     /**
      * Blocking insert, add a key and child ptr into a non leaf node.
@@ -277,7 +277,7 @@ public:
      */
 
     bool blockInsertInNonLeaf(boost::shared_mutex *l,
-			      PageAccess2 *ac,
+			      R2PageAccess *ac,
 			      uint8_t *key,
 			      uint32_t child,
 			      ErrorInfo *err);
@@ -305,7 +305,7 @@ public:
      * is not modified.
      */
     bool blockDeleteFromNonLeaf(boost::shared_mutex *l,
-				PageAccess2 *ac,
+				R2PageAccess *ac,
 				uint8_t *key,
 				ErrorInfo *err);
 
@@ -333,7 +333,7 @@ public:
      */
 
     bool blockFindInNonLeaf(boost::shared_mutex *l,
-			    PageAccess2 *ac,
+			    R2PageAccess *ac,
 			    uint8_t *key,
 			    uint32_t *child,
 			    ErrorInfo *err);
@@ -362,7 +362,7 @@ public:
      */
 
     bool blockFindInLeaf(boost::shared_mutex *l,
-			 PageAccess2 *ac,
+			 R2PageAccess *ac,
 			 uint8_t *key,
 			 uint64_t *val,
 			 ErrorInfo *err);
@@ -398,7 +398,7 @@ public:
      */
 
     bool blockInsertInLeaf(boost::shared_mutex *l,
-			   PageAccess2 *ac,
+			   R2PageAccess *ac,
 			   uint8_t *key,
 			   uint64_t val,
 			   ErrorInfo *err);
@@ -427,7 +427,7 @@ public:
      * is not modified.
      */
     bool blockDeleteFromLeaf(boost::shared_mutex *l,
-			     PageAccess2 *ac,
+			     R2PageAccess *ac,
 			     uint8_t *key,
 			     ErrorInfo *err);
 
@@ -458,7 +458,7 @@ public:
      *
      * @result Return true if found, false otherwise.
      */
-    bool findKeyPosition(PageAccess2 *ac, uint8_t *key, uint32_t *idx);
+    bool findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx);
 
 
     /********************************************************/
@@ -490,7 +490,7 @@ public:
      *
      * @result true if leaf successfully split, false otherwise.
      */
-    bool splitLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
+    bool splitLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
 		   ErrorInfo *err);
 
 
@@ -525,7 +525,7 @@ public:
      * @result true if leaf successfully split, false otherwise.
      *
      */
-    bool splitNonLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
+    bool splitNonLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
 		      ErrorInfo *err);
 
     /********************************************************/
@@ -561,13 +561,13 @@ public:
      * @note Locking is the callers responsibility.
      *
      */
-    bool concatLeaf(PageAccess2 *dst, PageAccess2 *src, bool dstIsFirst,
+    bool concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 		    ErrorInfo *err);
 
     /********************************************************/
 
     /**
-     * Init PageAccess2 pointers for a leaf node or non-leaf node.
+     * Init R2PageAccess pointers for a leaf node or non-leaf node.
      *
      * @param [in] ac The page access structure to be changed.
      * @param [in] buf The raw page buffer.
@@ -577,7 +577,7 @@ public:
      * used to determine leaf/non-leaf status.
      *
      */
-    void initPageAccess2(PageAccess2 *ac, uint8_t *buf);
+    void initPageAccess(R2PageAccess *ac, uint8_t *buf);
 
     /**
      * Init leaf page.

@@ -2764,6 +2764,64 @@ TC_BTree19::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_BTreeR200 : public TestCase {
+    TC_BTree200() : TestCase("TC_BTreeR200") {;};
+    void run();
+};
+
+void
+TC_BTreeR200::run()
+{
+    BTreeR2 b;
+    IndexHeader ih;
+    PageHeader ph;
+    PageAccess pa;
+    UUIDKey k;
+    ErrorInfo err;
+    bool ok;
+
+    ih.nKeyBytes = 16;
+    ih.pageSizeInBytes = 4096;
+    ih.maxNumNLeafKeys = 0;
+    ih.minNumNLeafKeys = 0;
+    ih.maxNumLeafKeys = 0;
+
+    ph.parentPageNum = 0;
+    ph.numKeys = 0;
+    ph.isLeaf = 1;
+    ph.pad0 = 0;
+    ph.pad1 = 0;
+
+    pa.header = &ph;
+    pa.keys = NULL;
+    pa.childPtrs = NULL;
+    pa.values = NULL;
+
+    b.header = &ih;
+    b.root = &pa;
+    b.ki = &k;
+
+    uint8_t *key = NULL;
+    uint64_t val = 0;
+
+    boost::shared_mutex m;
+
+    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
+    ASSERT_TRUE(ok == false);
+    
+    ph.isLeaf = 0;
+    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
+    ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2812,6 +2870,8 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree17());
     s->addTestCase(new dback::TC_BTree18());
     s->addTestCase(new dback::TC_BTree19());
+
+    s->addTestCase(new dback::TC_BTree200());
 
     return s;
 }
