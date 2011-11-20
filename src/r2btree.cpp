@@ -7,7 +7,7 @@
 #include <arpa/inet.h>
 
 #include "dback.h"
-#include "btree2.h"
+#include "r2btree.h"
 
 namespace dback {
 
@@ -17,11 +17,11 @@ namespace dback {
 /****************************************************/
 /****************************************************/
 bool
-BTree2::blockInsertInNonLeaf(boost::shared_mutex *l,
-			    PageAccess2 *ac,
-			    uint8_t *key,
-			    uint32_t child,
-			    ErrorInfo *err)
+R2BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
+			      R2PageAccess *ac,
+			      uint8_t *key,
+			      uint32_t child,
+			      ErrorInfo *err)
 {
     bool result, found;
     size_t bytes_to_move;
@@ -76,8 +76,8 @@ out:
 }
 
 bool
-BTree2::blockDeleteFromNonLeaf(boost::shared_mutex *l,
-			      PageAccess2 *ac,
+R2BTree::blockDeleteFromNonLeaf(boost::shared_mutex *l,
+			      R2PageAccess *ac,
 			      uint8_t *key,
 			      ErrorInfo *err)
 {
@@ -130,8 +130,8 @@ out:
 }
 
 bool
-BTree2::blockFindInNonLeaf(boost::shared_mutex *l,
-			  PageAccess2 *ac,
+R2BTree::blockFindInNonLeaf(boost::shared_mutex *l,
+			  R2PageAccess *ac,
 			  uint8_t *key,
 			  uint32_t *child,
 			  ErrorInfo *err)
@@ -165,8 +165,8 @@ out:
 }
 
 bool
-BTree2::blockFindInLeaf(boost::shared_mutex *l,
-		       PageAccess2 *ac,
+R2BTree::blockFindInLeaf(boost::shared_mutex *l,
+		       R2PageAccess *ac,
 		       uint8_t *key,
 		       uint64_t *val,
 		       ErrorInfo *err)
@@ -200,8 +200,8 @@ out:
 }
 
 bool
-BTree2::blockInsertInLeaf(boost::shared_mutex *l,
-			 PageAccess2 *ac,
+R2BTree::blockInsertInLeaf(boost::shared_mutex *l,
+			 R2PageAccess *ac,
 			 uint8_t *key,
 			 uint64_t val,
 			 ErrorInfo *err)
@@ -261,8 +261,8 @@ out:
 }
 
 bool
-BTree2::blockDeleteFromLeaf(boost::shared_mutex *l,
-			   PageAccess2 *ac,
+R2BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
+			   R2PageAccess *ac,
 			   uint8_t *key,
 			   ErrorInfo *err)
 {
@@ -315,7 +315,7 @@ out:
 }
 
 bool
-BTree2::findKeyPosition(PageAccess2 *ac, uint8_t *key, uint32_t *idx)
+R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
 {
     size_t n1, n2, n, ks;
 
@@ -391,7 +391,7 @@ BTree2::findKeyPosition(PageAccess2 *ac, uint8_t *key, uint32_t *idx)
 /********************************************************/
 
 bool
-BTree2::splitLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
+R2BTree::splitLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
 		 ErrorInfo *err)
 {
     if (full == NULL
@@ -442,7 +442,7 @@ BTree2::splitLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
 }
 
 bool
-BTree2::splitNonLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
+R2BTree::splitNonLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
 		    ErrorInfo *err)
 {
     if (full == NULL
@@ -494,7 +494,7 @@ BTree2::splitNonLeaf(PageAccess2 *full, PageAccess2 *empty, uint8_t *key,
 /********************************************************/
 
 bool
-BTree2::concatLeaf(PageAccess2 *dst, PageAccess2 *src, bool dstIsFirst,
+R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 		  ErrorInfo *err)
 {
     if (dst == NULL || src == NULL) {
@@ -545,24 +545,24 @@ BTree2::concatLeaf(PageAccess2 *dst, PageAccess2 *src, bool dstIsFirst,
 /********************************************************/
 
 void
-BTree2::initPageAccess2(PageAccess2 *ac, uint8_t *buf)
+R2BTree::initPageAccess(R2PageAccess *ac, uint8_t *buf)
 {
-    ac->header = reinterpret_cast<PageHeader2 *>(buf);
+    ac->header = reinterpret_cast<R2PageHeader *>(buf);
 
     if (ac->header->isLeaf) {
 	ac->keys = buf
-	    + sizeof(PageHeader2)
+	    + sizeof(R2PageHeader)
 	    + this->header->maxNumLeafKeys * sizeof(uint64_t);
 
 	ac->childPtrs = NULL;
 
-	ac->values = reinterpret_cast<uint64_t *>(buf + sizeof(PageHeader2));
+	ac->values = reinterpret_cast<uint64_t *>(buf + sizeof(R2PageHeader));
     }
     else {
 	ac->keys = buf
-	    + sizeof(PageHeader2)
+	    + sizeof(R2PageHeader)
 	    + this->header->maxNumNLeafKeys * sizeof(uint32_t);
-	ac->childPtrs = reinterpret_cast<uint32_t *>(buf + sizeof(PageHeader2));
+	ac->childPtrs = reinterpret_cast<uint32_t *>(buf + sizeof(R2PageHeader));
 	ac->values = NULL;
     }
 
@@ -570,16 +570,16 @@ BTree2::initPageAccess2(PageAccess2 *ac, uint8_t *buf)
 }
 
 void
-BTree2::initLeafPage(uint8_t *buf)
+R2BTree::initLeafPage(uint8_t *buf)
 {
     memset(buf, 0, this->header->pageSizeInBytes);
-    PageHeader2 *h = reinterpret_cast<PageHeader2 *>(buf);
+    R2PageHeader *h = reinterpret_cast<R2PageHeader *>(buf);
     h->isLeaf = 1;
     return;
 }
 
 void
-BTree2::initNonLeafPage(uint8_t *buf)
+R2BTree::initNonLeafPage(uint8_t *buf)
 {
     memset(buf, 0, this->header->pageSizeInBytes);
     return;
@@ -591,13 +591,13 @@ BTree2::initNonLeafPage(uint8_t *buf)
 /****************************************************/
 /****************************************************/
 int
-UUIDKey2::compare(const uint8_t *a, const uint8_t *b)
+R2UUIDKey::compare(const uint8_t *a, const uint8_t *b)
 {
     return 0;
 }
 
 void
-UUIDKey2::initIndexHeader(IndexHeader2 *h, uint32_t pageSizeInBytes)
+R2UUIDKey::initIndexHeader(R2IndexHeader *h, uint32_t pageSizeInBytes)
 {
     h->nKeyBytes = 16;
     h->pageSizeInBytes = pageSizeInBytes;
@@ -605,7 +605,7 @@ UUIDKey2::initIndexHeader(IndexHeader2 *h, uint32_t pageSizeInBytes)
     // non - leaf
     uint32_t sz_ptr = sizeof(uint32_t);
     uint32_t per_key = h->nKeyBytes + sz_ptr;
-    uint32_t nk = (pageSizeInBytes - sizeof(PageHeader2) - sz_ptr) / per_key;
+    uint32_t nk = (pageSizeInBytes - sizeof(R2PageHeader) - sz_ptr) / per_key;
 
     // ensure nk is even
     nk = nk & ~(unsigned int)0x01;
@@ -617,7 +617,7 @@ UUIDKey2::initIndexHeader(IndexHeader2 *h, uint32_t pageSizeInBytes)
     // leaf
     uint32_t sz_user_data = sizeof(uint64_t);
     per_key = h->nKeyBytes + sz_user_data;
-    h->maxNumLeafKeys = (pageSizeInBytes - sizeof(PageHeader2)) / per_key;
+    h->maxNumLeafKeys = (pageSizeInBytes - sizeof(R2PageHeader)) / per_key;
 
     return;
 }

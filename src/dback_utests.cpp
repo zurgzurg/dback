@@ -23,7 +23,7 @@
 
 #include "dback.h"
 #include "btree.h"
-#include "btree2.h"
+#include "r2btree.h"
 
 using namespace std;
 
@@ -2768,19 +2768,19 @@ TC_BTree19::run()
 
 namespace dback {
 
-struct TC_BTreeR200 : public TestCase {
-    TC_BTree200() : TestCase("TC_BTreeR200") {;};
+struct TC_R2BTree00 : public TestCase {
+    TC_R2BTree00() : TestCase("TC_R2BTree00") {;};
     void run();
 };
 
 void
-TC_BTreeR200::run()
+TC_R2BTree00::run()
 {
-    BTreeR2 b;
-    IndexHeader ih;
-    PageHeader ph;
-    PageAccess pa;
-    UUIDKey k;
+    R2BTree b;
+    R2IndexHeader ih;
+    R2PageHeader ph;
+    R2PageAccess pa;
+    R2UUIDKey k;
     ErrorInfo err;
     bool ok;
 
@@ -2871,7 +2871,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree18());
     s->addTestCase(new dback::TC_BTree19());
 
-    s->addTestCase(new dback::TC_BTree200());
+    s->addTestCase(new dback::TC_R2BTree00());
 
     return s;
 }
