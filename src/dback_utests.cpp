@@ -2786,35 +2786,33 @@ TC_R2BTree00::run()
 
     ih.nKeyBytes = 16;
     ih.pageSizeInBytes = 4096;
-    ih.maxNumNLeafKeys = 0;
-    ih.minNumNLeafKeys = 0;
-    ih.maxNumLeafKeys = 0;
+    ih.maxNumKeys[PageTypeNonLeaf] = 0;
+    ih.minNumNonLeafKeys = 0;
+    ih.maxNumKeys[PageTypeLeaf] = 0;
 
     ph.parentPageNum = 0;
     ph.numKeys = 0;
-    ph.isLeaf = 1;
-    ph.pad0 = 0;
-    ph.pad1 = 0;
+    ph.pageType = PageTypeLeaf;
+    ph.pad = 0;
 
     pa.header = &ph;
     pa.keys = NULL;
-    pa.childPtrs = NULL;
-    pa.values = NULL;
+    pa.vals = NULL;
 
     b.header = &ih;
     b.root = &pa;
     b.ki = &k;
 
     uint8_t *key = NULL;
-    uint64_t val = 0;
+    uint8_t *val = NULL;
 
     boost::shared_mutex m;
 
-    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
+    ok = b.blockInsert(&m, &pa, key, val, &err);
     ASSERT_TRUE(ok == false);
     
-    ph.isLeaf = 0;
-    ok = b.blockInsertInLeaf(&m, &pa, key, val, &err);
+    ph.pageType = PageTypeNonLeaf;
+    ok = b.blockInsert(&m, &pa, key, val, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);

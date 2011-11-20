@@ -60,58 +60,61 @@ namespace dback {
  *
  * At 5 levels the BTree can handle 75 billion entries. And it will have
  * around 369 million 4K pages for a total size of 1,513,476,325,376 bytes
- * or around 1 TB. This is for the index alone and does not include space
- * for storing the actual data associated with each UUID.
+ * or around 1 TB.
  *
  * Based on this, a 32 bit value for page numbers in the index is ok.
  *
  * The nodes are stored in a single file, and the page numbers refer to
  * positions within the file. The byte offset will be page size * page number.
  *
- * The first page of the btree file contains an IndexHeader. The class
- * definition below maps directly to the actual on-disk structure. Data
- * is stored in host byte order - so an index file is not portable to
- * other machines. Page 1 is the root. Additional node and leaf pages
- * follow.
+ * The first page of the btree file is an IndexHeader, which contains
+ * information about the index itself. This first page is not a node
+ * in the btree itself. The class definition below maps directly to
+ * the actual on-disk structure. Data is stored in host byte order -
+ * so an index file is not portable to other machines. Page 1 is the
+ * root. Additional node and leaf pages follow. Page 0 is invalid as a page
+ * number - since that page is reserved for the index header itself.
  *
  *
  * @verbatim
  *
- * Non-Leaf Page
+ * Page Layout
  * +-----------------------+---------+
- * | header|array of 32bit |array of |
- * |       |child ptrs     |keys     |
- * |       | always max sz |         |   
+ * | header|array data     |array of |
+ * |       |vals           |keys     |
  * +-----------------------+---------+
  *
  * @endverbatim
  *
- * The array of child pointers is a fixed size: the max number of keys
- * the can fit into a non-leaf page. Therefore the offset of the key
- * array will always be at the same position in all non-leaf pages.
+ * Note that the leaf and non-leaf nodes have slightly different
+ * structure. In non leaf nodes the "vals" array contains child node
+ * numbers, in the leaf nodes the "vals" array has end user value
+ * information. All keys must be of a fixed length, and all vals -
+ * both user values and internal page numbers must be of a fixed
+ * legnth. Though user data length and page number length need not be
+ * the same.
  *
- * @verbatim
+ * @note In a non-leaf page the length of the child pointer array is
+ * one more that the number of keys. The extra pointer is stored at
+ * the end of the array.
  *
- * Leaf Page
- * +--------------------+----------+
- * | header|array 64bit |array of  |
- * |       |user data   |keys      |
- * |       |always max  |          |
- * |       |size        |          |
- * +--------------------+----------+
- *
- * @endverbatim
- *
- * In a non-leaf page the length of the child pointer array is one more
- * that the number of keys. The extra pointer is stored at the end of the
- * array.
- *
- * As in the case the non-leaf pages, the array of 64bit user data pointers
- * is of fixed size - for the max number of keys that can fit into a leaf
- * page. The offset of all key arrays in all leaf pages is the same.
+ * @note When a R2BTree is created key size, data value size and page
+ * size are all fixed. Therefore the number of keys in leaf and
+ * non-leaf nodes is fixed and the offset of the key and value arrays
+ * for leaf and non-leaf nodes is also fixed.
  *
  */
 
+/**
+ * Node type.
+ *
+ * Used in the node/page header as well as to access the
+ * size fields in the btree header.
+ */
+enum PageType {
+    PageTypeNonLeaf,
+    PageTypeLeaf
+};
 
 /**
  * Holds meta data about a particular btree index.
@@ -124,16 +127,26 @@ public:
     /// Size of page in bytes. Should be a multiple of fs block size.
     uint32_t pageSizeInBytes;
 
- 
-   /// Max key capacity of a non-leaf node.
-    uint32_t maxNumNLeafKeys;
+    /**
+     * Size of each value in a node.
+     *
+     * Indexed by page type. Leaf nodes have all have values of the
+     * same size, and non-leaf nodes all have values of the same size.
+     */
+    uint32_t valSize[2];
 
-    /// Each node will have at most this many keys.
-    uint32_t minNumNLeafKeys;
- 
+    /**
+     * Number of keys in a node.
+     *
+     * All leaf nodes can hold the same number keys, and all non-leaf
+     * nodes can hold the same number of keys.
+     */
+    uint32_t maxNumKeys[2];
 
-    /// Max key capacity of a leaf node.
-    uint32_t maxNumLeafKeys;
+    /**
+     * Min number of keys in a non-leaf node.
+     */
+    uint32_t minNumNonLeafKeys;
 };
 
 /**
@@ -150,14 +163,23 @@ public:
     /// Number of keys in this node.
     uint8_t  numKeys;
 
-    /// 1 if this node is a leaf node, 0 otherwise.
-    uint8_t  isLeaf;
+    /// Number of values - non-leaf nodes have one more value than n keys.
+    uint8_t  numVals;
 
-    /// must be zero.
-    uint8_t  pad0;
+    /**
+     * Type of this page.
+     *
+     * 0 = non-leaf
+     * 1 = leaf
+     *
+     * The page type can be used to index into the valSize and maxNumKeys
+     * arrays in the R2IndexHeader.
+     *
+     */
+    uint8_t  pageType;
 
-    /// must be zero.
-    uint8_t  pad1;
+    /// Padding to make header be 32 bit aligned, must be 0.
+    uint8_t pad;
 };
 
 /**
@@ -177,25 +199,16 @@ public:
     uint8_t *keys;
 
     /**
-     * Pointer to array of child node page numbers.
+     * Pointer to array of values.
      *
-     * This pointer or the user data pointer will be
-     * valid. Both are not used at the same time.
+     * If this page is a leaf page the values are user values, but
+     * if this is a non-leaf page then the values are page numbers.
      *
-     * @note The length of the child pointer array is one more
-     * than the number of keys. The extra pointer is stored at
-     * the end of the array.
+     * @note In the case of a non-leaf node there will also be an
+     * extra value. The extra pointer is stored at the end of the
+     * array.
      */
-    uint32_t *childPtrs;
-
-    /**
-     * Pointer to array of user data.
-     *
-     * This pointer or the user data pointer will be
-     * valid. Both are not used at the same time. The number of
-     * user data is the same as the number of keys.
-     */
-    uint64_t *values;
+    uint8_t *vals;
 };
 
 /**
@@ -245,43 +258,94 @@ public:
     R2PageAccess *root;
     R2KeyInterface *ki;
     
+
+
     /**
-     * Blocking insert, add a key and child ptr into a non leaf node.
+     * Blocking insert, add a key and value into a node.
      *
      * @param [in] l shared lock
      * @param [in] ac Pointer to info about the particular leaf
      *                page to insert into.
-     * @param [in] key Pointer to a the key to be inserted.
-     * @param [in] child The child pointer to be inserted.
+     * @param [in] key Pointer to the key to be inserted.
+     * @param [in] val Pointer to the value to be inserted.
      * @param [out] err If an error occurs this will contain error info.
      *
      * Blocking insert. This routine will block until it acquires an
-     * exclusive lock on l. After the lock is acquired, this routine
-     * will check if there is enough space to insert the key without
+     * exclusive lock on l. After the lock is acquired, this routine will
+     * check if there is enough space to insert the key without
      * needing to overflow the page. If there is not enough space then
      * false is returned and the page is not modified.  If there is
      * enough space the key is copied into the page at the proper
-     * location, the associated child ptrs are modified, and true is
-     * returned.  In all cases the lock is released before returning.
+     * location, the page values are modified, the user data val is
+     * copied, and true is returned.  In all cases the lock is
+     * released before returning.
      *
      * If they key already exists in the node false is returned and the
      * node is unmodified.
-     *
-     * If true is returned the error object is not modified. Otherwise
-     * it will contain information about the failure.
-     * 
-     * @note Not yet known how splitting will be handled.
      *
      * @return Return true if insert took place, false if insert could
      * not be done. If false is returned the page is not modified.
      */
 
-    bool blockInsertInNonLeaf(boost::shared_mutex *l,
-			      R2PageAccess *ac,
-			      uint8_t *key,
-			      uint32_t child,
-			      ErrorInfo *err);
+    bool blockInsert(boost::shared_mutex *l,
+		     R2PageAccess *ac,
+		     uint8_t *key,
+		     uint8_t *val,
+		     ErrorInfo *err);
 
+
+    /********************************************************/
+
+    /**
+     * Return key index, where it should be store or where it is stored.
+     *
+     * @param [in] ac Pointer to info about a leaf page.
+     * @param [in] key The key to be inserted.
+     * @param [out] idx Key number where key is stored or should be stored.
+     *
+     * This is not a public API routine.
+     *
+     * The node can be a leaf or non-leaf node.
+     *
+     * Search the key array fo the key. Return true if the key is
+     * found, and store the position of the key in *idx. If the key is
+     * not found, return false, and store the position where the key
+     * should be inserted at *idx.
+     *
+     * Locking and thread safety are the responsibility of the caller.
+     *
+     * @note The return value is not the offset into the key array, rather
+     * it is the key index - it needs to be multiplied by the key size to
+     * find the actual byte offset.
+     *
+     * @result Return true if found, false otherwise.
+     */
+    bool findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
     /**
      * Blocking delete, remove a key from a non-leaf node.
      *
@@ -368,42 +432,6 @@ public:
 			 ErrorInfo *err);
 
     /**
-     * Blocking insert, add a key and value into a leaf node.
-     *
-     * @param [in] l shared lock
-     * @param [in] ac Pointer to info about the particular leaf
-     *                page to insert into.
-     * @param [in] key Pointer to a the key to be inserted.
-     * @param [in] val The value to be inserted.
-     * @param [out] err If an error occurs this will contain error info.
-     *
-     * Blocking insert. This routine will block until it acquires an
-     * exclusive lock on l. After the lock is acquired, this routine will
-     * check if there is enough space to insert the key without
-     * needing to overflow the page. If there is not enough space then
-     * false is returned and the page is not modified.  If there is
-     * enough space the key is copied into the page at the proper
-     * location, the page values are modified, the user data val is
-     * copied, and true is returned.  In all cases the lock is
-     * released before returning.
-     *
-     * If they key already exists in the node false is returned and the
-     * node is unmodified.
-     *
-     * @note Not yet known how splitting will be handled when the leaf
-     * node is full.
-     *
-     * @return Return true if insert took place, false if insert could
-     * not be done. If false is returned the page is not modified.
-     */
-
-    bool blockInsertInLeaf(boost::shared_mutex *l,
-			   R2PageAccess *ac,
-			   uint8_t *key,
-			   uint64_t val,
-			   ErrorInfo *err);
-
-    /**
      * Blocking delete, remove a key from a leaf node.
      *
      * @param [in] l shared lock
@@ -430,35 +458,6 @@ public:
 			     R2PageAccess *ac,
 			     uint8_t *key,
 			     ErrorInfo *err);
-
-
-    /********************************************************/
-
-    /**
-     * Return key index, where it should be store or where it is stored.
-     *
-     * @param [in] ac Pointer to info about a leaf page.
-     * @param [in] key The key to be inserted.
-     * @param [out] idx Key number where key is stored or should be stored.
-     *
-     * This is not a public API routine.
-     *
-     * The node can be a leaf or non-leaf node.
-     *
-     * Search the key array fo the key. Return true if the key is
-     * found, and store the position of the key in *idx. If the key is
-     * not found, return false, and store the position where the key
-     * should be inserted at *idx.
-     *
-     * Locking and thread safety are the responsibility of the caller.
-     *
-     * @note The return value is not the offset into the key array, rather
-     * it is the key index - it needs to be multiplied by the key size to
-     * find the actual byte offset.
-     *
-     * @result Return true if found, false otherwise.
-     */
-    bool findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx);
 
 
     /********************************************************/
@@ -598,6 +597,7 @@ public:
      *
      */
     void initNonLeafPage(uint8_t *buf);
+#endif
 };
 
 }
