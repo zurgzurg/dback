@@ -1,11 +1,11 @@
-#ifndef _BTREER2_H_
-#define _BTREER2_H_
+#ifndef _R2BTREE_H_
+#define _R2BTREE_H_
 
 namespace dback {
 
 
 /**
- * @page btreeR2 Overview of BTree implementation.
+ * @page r2btree Overview of BTree implementation.
  *
  * This B-Tree is modeled on the B+-Tree as described
  * in "The Ubiquitous B-Tree" by Douglas Comer, Computing
@@ -234,7 +234,7 @@ public:
      *
      * Initialize all the size fields for an IndexHeader.
      */
-    static void initIndexHeader(IndexHeader2 *ih, uint32_t pageSize);
+    static void initIndexHeader(R2IndexHeader *ih, uint32_t pageSize);
 };
 
 class R2BTree {
