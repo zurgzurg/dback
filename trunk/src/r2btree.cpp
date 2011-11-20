@@ -16,32 +16,32 @@ namespace dback {
 /* btree funcs                                      */
 /****************************************************/
 /****************************************************/
+
+
+
 bool
-R2BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
-			      R2PageAccess *ac,
-			      uint8_t *key,
-			      uint32_t child,
-			      ErrorInfo *err)
+R2BTree::blockInsert(boost::shared_mutex *l,
+		     R2PageAccess *ac,
+		     uint8_t *key,
+		     uint8_t *val,
+		     ErrorInfo *err)
 {
-    bool result, found;
+    uint32_t n_to_move, idx;
     size_t bytes_to_move;
-    uint32_t idx, n_to_move;
-    uint8_t *dst, *src;
+    uint8_t *dst, *src, pt;
+    bool found, result;
 
     result = false;
     l->lock();
-    
-    if (ac->header->isLeaf != 0) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
 
-    if (ac->header->numKeys + 1 > this->header->maxNumNLeafKeys) {
+    pt = ac->header->pageType;
+
+    if (ac->header->numKeys + 1 > this->header->maxNumKeys[ pt ]) {
 	err->setErrNum(ErrorInfo::ERR_NODE_FULL);
 	err->message.assign("page full");
 	goto out;
     }
+    
 
     found = this->findKeyPosition(ac, key, &idx);
     if (found == true) {
@@ -50,6 +50,7 @@ R2BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
 	goto out;
     }
 
+
     if (idx > 0 || ac->header->numKeys > 0) {
 	n_to_move = ac->header->numKeys - idx;
 	bytes_to_move = n_to_move * this->header->nKeyBytes;
@@ -57,15 +58,17 @@ R2BTree::blockInsertInNonLeaf(boost::shared_mutex *l,
 	src = ac->keys + idx * this->header->nKeyBytes;
 	memmove(dst, src, bytes_to_move);
 
-	bytes_to_move = n_to_move * sizeof(uint32_t);
-	dst = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx + 1]);
-	src = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx]);
+	bytes_to_move = n_to_move * this->header->valSize[pt];
+	dst = ac->vals + ((idx + 1) * this->header->valSize[pt]);
+	src = ac->vals + (idx * this->header->valSize[pt]);
 	memmove(dst, src, bytes_to_move);
     }
 
     dst = ac->keys + idx * this->header->nKeyBytes;
     memcpy(dst, key, this->header->nKeyBytes);
-    ac->childPtrs[idx] = child;
+    dst = ac->vals + idx * this->header->valSize[pt];
+    memcpy(dst, val, this->header->valSize[pt]);
+
     ac->header->numKeys++;
 
     result = true;
@@ -75,6 +78,91 @@ out:
     return result;
 }
 
+/********************************************************/
+
+bool
+R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
+{
+    size_t n1, n2, n, ks;
+
+    if (ac->header->numKeys == 0) {
+	*idx = 0;
+	return false;
+    }
+    else if (ac->header->numKeys == 1) {
+	int c = this->ki->compare(key, ac->keys);
+	if (c < 0) {
+	    *idx = 0;
+	    return false;
+	}
+	else if (c == 0) {
+	    *idx = 0;
+	    return true;
+	}
+	else {
+	    *idx = 1;
+	    return false;
+	}
+    }
+
+    ks = this->header->nKeyBytes;
+    n1 = 0;
+    n2 = ac->header->numKeys - 1;
+
+    while (n2 >= n1) {
+	n = n2 - n1;
+	if (n == 1) {
+	    int c1 = this->ki->compare(key, ac->keys + n1 * ks);
+
+	    if (c1 < 0) {
+		*idx = n1;
+		return false;
+	    }
+	    else if (c1 == 0) {
+		*idx = n1;
+		return true;
+	    }
+
+	    int c2 = this->ki->compare(key, ac->keys + n2 * ks);
+	    if (c2 < 0) {
+		*idx = n2;
+		return false;
+	    }
+	    else if (c2 == 0) {
+		*idx = n2;
+		return true;
+	    }
+	    else {
+		*idx = n2 + 1;
+		return false;
+	    }
+	}
+	else {
+	    size_t m = n1 + n/2;
+	    int c = this->ki->compare(key, ac->keys + m * ks);
+	    if (c < 0) {
+		n2 = m;
+	    }
+	    else if (c == 0) {
+		*idx = m;
+		return true;
+	    }
+	    else {
+		n1 = m;
+	    }
+	}
+    }
+}
+
+
+
+
+
+
+
+
+
+#if 0
 bool
 R2BTree::blockDeleteFromNonLeaf(boost::shared_mutex *l,
 			      R2PageAccess *ac,
@@ -200,67 +288,6 @@ out:
 }
 
 bool
-R2BTree::blockInsertInLeaf(boost::shared_mutex *l,
-			 R2PageAccess *ac,
-			 uint8_t *key,
-			 uint64_t val,
-			 ErrorInfo *err)
-{
-    uint32_t n_to_move, idx;
-    size_t bytes_to_move;
-    uint8_t *dst, *src;
-    bool found, result;
-
-    result = false;
-    l->lock();
-
-    if (ac->header->isLeaf != 1) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
-
-    if (ac->header->numKeys + 1 > this->header->maxNumLeafKeys) {
-	err->setErrNum(ErrorInfo::ERR_NODE_FULL);
-	err->message.assign("page full");
-	goto out;
-    }
-    
-
-    found = this->findKeyPosition(ac, key, &idx);
-    if (found == true) {
-	err->setErrNum(ErrorInfo::ERR_DUPLICATE_INSERT);
-	err->message.assign("attempt to insert duplicate key");
-	goto out;
-    }
-
-
-    if (idx > 0 || ac->header->numKeys > 0) {
-	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->nKeyBytes;
-	dst = ac->keys + ((idx + 1) * this->header->nKeyBytes);
-	src = ac->keys + idx * this->header->nKeyBytes;
-	memmove(dst, src, bytes_to_move);
-
-	bytes_to_move = n_to_move * sizeof(uint64_t);
-	dst = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
-	src = reinterpret_cast<uint8_t *>(&ac->values[idx]);
-	memmove(dst, src, bytes_to_move);
-    }
-
-    dst = ac->keys + idx * this->header->nKeyBytes;
-    memcpy(dst, key, this->header->nKeyBytes);
-    ac->values[idx] = val;
-    ac->header->numKeys++;
-
-    result = true;
-
-out:
-    l->unlock();
-    return result;
-}
-
-bool
 R2BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
 			   R2PageAccess *ac,
 			   uint8_t *key,
@@ -312,80 +339,6 @@ R2BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
 out:
     l->unlock();
     return result;
-}
-
-bool
-R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
-{
-    size_t n1, n2, n, ks;
-
-    if (ac->header->numKeys == 0) {
-	*idx = 0;
-	return false;
-    }
-    else if (ac->header->numKeys == 1) {
-	int c = this->ki->compare(key, ac->keys);
-	if (c < 0) {
-	    *idx = 0;
-	    return false;
-	}
-	else if (c == 0) {
-	    *idx = 0;
-	    return true;
-	}
-	else {
-	    *idx = 1;
-	    return false;
-	}
-    }
-
-    ks = this->header->nKeyBytes;
-    n1 = 0;
-    n2 = ac->header->numKeys - 1;
-
-    while (n2 >= n1) {
-	n = n2 - n1;
-	if (n == 1) {
-	    int c1 = this->ki->compare(key, ac->keys + n1 * ks);
-
-	    if (c1 < 0) {
-		*idx = n1;
-		return false;
-	    }
-	    else if (c1 == 0) {
-		*idx = n1;
-		return true;
-	    }
-
-	    int c2 = this->ki->compare(key, ac->keys + n2 * ks);
-	    if (c2 < 0) {
-		*idx = n2;
-		return false;
-	    }
-	    else if (c2 == 0) {
-		*idx = n2;
-		return true;
-	    }
-	    else {
-		*idx = n2 + 1;
-		return false;
-	    }
-	}
-	else {
-	    size_t m = n1 + n/2;
-	    int c = this->ki->compare(key, ac->keys + m * ks);
-	    if (c < 0) {
-		n2 = m;
-	    }
-	    else if (c == 0) {
-		*idx = m;
-		return true;
-	    }
-	    else {
-		n1 = m;
-	    }
-	}
-    }
 }
 
 /********************************************************/
@@ -584,6 +537,7 @@ R2BTree::initNonLeafPage(uint8_t *buf)
     memset(buf, 0, this->header->pageSizeInBytes);
     return;
 }
+#endif
 
 /****************************************************/
 /****************************************************/
@@ -603,21 +557,22 @@ R2UUIDKey::initIndexHeader(R2IndexHeader *h, uint32_t pageSizeInBytes)
     h->pageSizeInBytes = pageSizeInBytes;
 
     // non - leaf
-    uint32_t sz_ptr = sizeof(uint32_t);
+    uint32_t sz_ptr = h->valSize[PageTypeNonLeaf];
     uint32_t per_key = h->nKeyBytes + sz_ptr;
     uint32_t nk = (pageSizeInBytes - sizeof(R2PageHeader) - sz_ptr) / per_key;
 
     // ensure nk is even
     nk = nk & ~(unsigned int)0x01;
 
-    h->maxNumNLeafKeys = nk;
-    h->minNumNLeafKeys = nk / 2;
+    h->maxNumKeys[PageTypeNonLeaf] = nk;
+    h->minNumNonLeafKeys = nk / 2;
 
 
     // leaf
-    uint32_t sz_user_data = sizeof(uint64_t);
+    uint32_t sz_user_data = h->valSize[PageTypeLeaf];
     per_key = h->nKeyBytes + sz_user_data;
-    h->maxNumLeafKeys = (pageSizeInBytes - sizeof(R2PageHeader)) / per_key;
+    uint32_t n_leaf_keys = (pageSizeInBytes - sizeof(R2PageHeader)) / per_key;
+    h->maxNumKeys[PageTypeLeaf] = n_leaf_keys;
 
     return;
 }
