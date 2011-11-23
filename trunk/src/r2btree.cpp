@@ -53,9 +53,9 @@ R2BTree::blockInsert(boost::shared_mutex *l,
 
     if (idx > 0 || ac->header->numKeys > 0) {
 	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->nKeyBytes;
-	dst = ac->keys + ((idx + 1) * this->header->nKeyBytes);
-	src = ac->keys + idx * this->header->nKeyBytes;
+	bytes_to_move = n_to_move * this->header->keySize;
+	dst = ac->keys + ((idx + 1) * this->header->keySize);
+	src = ac->keys + idx * this->header->keySize;
 	memmove(dst, src, bytes_to_move);
 
 	bytes_to_move = n_to_move * this->header->valSize[pt];
@@ -64,8 +64,8 @@ R2BTree::blockInsert(boost::shared_mutex *l,
 	memmove(dst, src, bytes_to_move);
     }
 
-    dst = ac->keys + idx * this->header->nKeyBytes;
-    memcpy(dst, key, this->header->nKeyBytes);
+    dst = ac->keys + idx * this->header->keySize;
+    memcpy(dst, key, this->header->keySize);
     dst = ac->vals + idx * this->header->valSize[pt];
     memcpy(dst, val, this->header->valSize[pt]);
 
@@ -105,7 +105,7 @@ R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
 	}
     }
 
-    ks = this->header->nKeyBytes;
+    ks = this->header->keySize;
     n1 = 0;
     n2 = ac->header->numKeys - 1;
 
@@ -198,9 +198,9 @@ R2BTree::blockDeleteFromNonLeaf(boost::shared_mutex *l,
 
     if (ac->header->numKeys > 1) {
 	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->nKeyBytes;
-	dst = ac->keys + idx * this->header->nKeyBytes;
-	src = ac->keys + (idx + 1) * this->header->nKeyBytes;
+	bytes_to_move = n_to_move * this->header->keySize;
+	dst = ac->keys + idx * this->header->keySize;
+	src = ac->keys + (idx + 1) * this->header->keySize;
 	memmove(dst, src, bytes_to_move);
 
 	bytes_to_move = n_to_move * sizeof(uint32_t);
@@ -322,9 +322,9 @@ R2BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
 
     if (ac->header->numKeys > 1) {
 	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->nKeyBytes;
-	dst = ac->keys + idx * this->header->nKeyBytes;
-	src = ac->keys + (idx + 1) * this->header->nKeyBytes;
+	bytes_to_move = n_to_move * this->header->keySize;
+	dst = ac->keys + idx * this->header->keySize;
+	src = ac->keys + (idx + 1) * this->header->keySize;
 	memmove(dst, src, bytes_to_move);
 
 	bytes_to_move = n_to_move * sizeof(uint64_t);
@@ -373,13 +373,13 @@ R2BTree::splitLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
     uint32_t move_start_idx = full->header->numKeys / 2;
     uint32_t n_to_move = full->header->numKeys - move_start_idx;
 
-    bytes = n_to_move * this->header->nKeyBytes;
-    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    bytes = n_to_move * this->header->keySize;
+    src = full->keys + move_start_idx * this->header->keySize;
     dst = empty->keys;
     memmove(dst, src, bytes);
 
-    src = full->keys + move_start_idx * this->header->nKeyBytes;
-    memmove(key, src, this->header->nKeyBytes);
+    src = full->keys + move_start_idx * this->header->keySize;
+    memmove(key, src, this->header->keySize);
 
     bytes = n_to_move * sizeof(uint64_t);
     vsrc = full->values + move_start_idx * sizeof(uint64_t);
@@ -424,13 +424,13 @@ R2BTree::splitNonLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
     uint32_t move_start_idx = this->header->minNumNLeafKeys;
     uint32_t n_to_move = full->header->numKeys - move_start_idx;
 
-    bytes = n_to_move * this->header->nKeyBytes;
-    src = full->keys + move_start_idx * this->header->nKeyBytes;
+    bytes = n_to_move * this->header->keySize;
+    src = full->keys + move_start_idx * this->header->keySize;
     dst = empty->keys;
     memmove(dst, src, bytes);
 
-    src = full->keys + move_start_idx * this->header->nKeyBytes;
-    memmove(key, src, this->header->nKeyBytes);
+    src = full->keys + move_start_idx * this->header->keySize;
+    memmove(key, src, this->header->keySize);
 
     bytes = n_to_move * sizeof(uint32_t);
     child_src = full->childPtrs + move_start_idx * sizeof(uint32_t);
@@ -471,8 +471,8 @@ R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 	bytes_to_move = dst->header->numKeys * sizeof(uint64_t);
 	memmove(val_dst, dst->values, bytes_to_move);
 
-	uint8_t *key_dst = dst->keys + slots_needed * this->header->nKeyBytes;
-	bytes_to_move = dst->header->numKeys * this->header->nKeyBytes;
+	uint8_t *key_dst = dst->keys + slots_needed * this->header->keySize;
+	bytes_to_move = dst->header->numKeys * this->header->keySize;
 	memmove(key_dst, dst->keys, bytes_to_move);
 
 	dst_idx = 0;
@@ -481,8 +481,8 @@ R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 	dst_idx = dst->header->numKeys;
     }
 
-    uint8_t *key_dst = dst->keys + dst_idx * this->header->nKeyBytes;
-    bytes_to_move = src->header->numKeys * this->header->nKeyBytes;
+    uint8_t *key_dst = dst->keys + dst_idx * this->header->keySize;
+    bytes_to_move = src->header->numKeys * this->header->keySize;
     memmove(key_dst, src->keys, bytes_to_move);
 
     uint64_t *val_dst = dst->values + dst_idx;
@@ -539,6 +539,40 @@ R2BTree::initNonLeafPage(uint8_t *buf)
 }
 #endif
 
+bool
+R2BTree::initIndexHeader(R2IndexHeader *h, R2BTreeParams *p)
+{
+    h->keySize = p->keySize;
+    h->pageSize = p->pageSize;
+    h->valSize[PageTypeNonLeaf] = sizeof(uint32_t);
+    h->valSize[PageTypeLeaf] = p->valSize;
+
+    // non - leaf
+    uint32_t val_sz = h->valSize[PageTypeNonLeaf];
+    uint32_t per_key = h->keySize + val_sz;
+    uint32_t nk = (h->pageSize - sizeof(R2PageHeader) - val_sz) / per_key;
+
+    // ensure nk is even
+    nk = nk & ~(uint32_t)0x01;
+
+    h->maxNumKeys[PageTypeNonLeaf] = nk;
+    h->minNumKeys[PageTypeNonLeaf] = nk / 2;
+
+
+    // leaf
+    uint32_t sz_user_data = h->valSize[PageTypeLeaf];
+    per_key = h->keySize + sz_user_data;
+    uint32_t n_leaf_keys = (h->pageSize - sizeof(R2PageHeader)) / per_key;
+
+    // must be even
+    n_leaf_keys = n_leaf_keys & ~(uint32_t)0x01;
+
+    h->maxNumKeys[PageTypeLeaf] = n_leaf_keys;
+    h->minNumKeys[PageTypeLeaf] = n_leaf_keys / 2;
+
+    return true;
+}
+
 /****************************************************/
 /****************************************************/
 /* UUID key support                                 */
@@ -550,32 +584,6 @@ R2UUIDKey::compare(const uint8_t *a, const uint8_t *b)
     return 0;
 }
 
-void
-R2UUIDKey::initIndexHeader(R2IndexHeader *h, uint32_t pageSizeInBytes)
-{
-    h->nKeyBytes = 16;
-    h->pageSizeInBytes = pageSizeInBytes;
-
-    // non - leaf
-    uint32_t sz_ptr = h->valSize[PageTypeNonLeaf];
-    uint32_t per_key = h->nKeyBytes + sz_ptr;
-    uint32_t nk = (pageSizeInBytes - sizeof(R2PageHeader) - sz_ptr) / per_key;
-
-    // ensure nk is even
-    nk = nk & ~(unsigned int)0x01;
-
-    h->maxNumKeys[PageTypeNonLeaf] = nk;
-    h->minNumNonLeafKeys = nk / 2;
-
-
-    // leaf
-    uint32_t sz_user_data = h->valSize[PageTypeLeaf];
-    per_key = h->nKeyBytes + sz_user_data;
-    uint32_t n_leaf_keys = (pageSizeInBytes - sizeof(R2PageHeader)) / per_key;
-    h->maxNumKeys[PageTypeLeaf] = n_leaf_keys;
-
-    return;
-}
 
 }
 

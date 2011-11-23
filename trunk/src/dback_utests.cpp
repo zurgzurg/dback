@@ -2784,11 +2784,12 @@ TC_R2BTree00::run()
     ErrorInfo err;
     bool ok;
 
-    ih.nKeyBytes = 16;
-    ih.pageSizeInBytes = 4096;
+    ih.keySize = 16;
+    ih.pageSize = 4096;
     ih.maxNumKeys[PageTypeNonLeaf] = 0;
-    ih.minNumNonLeafKeys = 0;
+    ih.minNumKeys[PageTypeNonLeaf] = 0;
     ih.maxNumKeys[PageTypeLeaf] = 0;
+    ih.minNumKeys[PageTypeLeaf] = 0;
 
     ph.parentPageNum = 0;
     ph.numKeys = 0;
@@ -2814,6 +2815,67 @@ TC_R2BTree00::run()
     ph.pageType = PageTypeNonLeaf;
     ok = b.blockInsert(&m, &pa, key, val, &err);
     ASSERT_TRUE(ok == false);
+
+    this->setStatus(true);
+}
+
+}
+
+/************/
+
+namespace dback {
+
+struct TC_R2BTree01 : public TestCase {
+    TC_R2BTree01() : TestCase("TC_R2BTree01") {;};
+    void run();
+};
+
+void
+TC_R2BTree01::run()
+{
+    {
+	R2IndexHeader ih;
+	R2BTreeParams p;
+
+	p.pageSize = 76;
+	p.keySize = 16;
+	p.valSize =  8;
+	// page = <pageheader><vals><keys>
+	// <pageheader> = 8 bytes
+	// leaf: sz = 8 + 2 *(8 + 16) = 56; 
+	// non leaf: sz = 8 + 3 * ( 8 + 4 ) + 4 = 48
+	// but non leaf size must be even
+	R2BTree::initIndexHeader(&ih, &p);
+	ASSERT_TRUE(ih.keySize == 16);
+	ASSERT_TRUE(ih.pageSize == 76);
+	ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] == 2);
+	ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] == 1);
+	ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == 2);
+	ASSERT_TRUE(ih.minNumKeys[PageTypeLeaf] == 1);
+    }
+
+    {
+	R2IndexHeader ih;
+	R2BTreeParams p;
+
+	p.pageSize = 80;
+	p.keySize = 16;
+	p.valSize =  8;
+
+	R2BTree::initIndexHeader(&ih, &p);
+	ASSERT_TRUE(ih.keySize == 16);
+	ASSERT_TRUE(ih.pageSize == 80);
+
+	// leaf: sz=8 + 3*(16 + 8) = 80
+	// leaf sizes must be even
+	ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == 2);
+	ASSERT_TRUE(ih.minNumKeys[PageTypeLeaf] == 1);
+
+	// non leaf: sz=8 + 3 * (16 + 4) + 4 = 88
+	// non leaf must be even
+	ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] == 2);
+	ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] == 1);
+    }
 
     this->setStatus(true);
 }
@@ -2870,6 +2932,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_BTree19());
 
     s->addTestCase(new dback::TC_R2BTree00());
+    s->addTestCase(new dback::TC_R2BTree01());
 
     return s;
 }

@@ -122,10 +122,10 @@ enum PageType {
 class R2IndexHeader {
 public:
     /// Size of key in bytes.
-    uint32_t nKeyBytes;
+    uint32_t keySize;
 
     /// Size of page in bytes. Should be a multiple of fs block size.
-    uint32_t pageSizeInBytes;
+    uint32_t pageSize;
 
     /**
      * Size of each value in a node.
@@ -136,7 +136,7 @@ public:
     uint32_t valSize[2];
 
     /**
-     * Number of keys in a node.
+     * Max number of keys in a node.
      *
      * All leaf nodes can hold the same number keys, and all non-leaf
      * nodes can hold the same number of keys.
@@ -144,9 +144,12 @@ public:
     uint32_t maxNumKeys[2];
 
     /**
-     * Min number of keys in a non-leaf node.
+     * Min number of keys in a node.
+     *
+     * The basic btree algorithm requires that nodes have a minimum number
+     * of keys to preserve the btree property.
      */
-    uint32_t minNumNonLeafKeys;
+    uint32_t minNumKeys[2];
 };
 
 /**
@@ -212,6 +215,22 @@ public:
 };
 
 /**
+ * Main parameters that describe an r2btree.
+ *
+ * All sizes are in bytes.
+ */
+class R2BTreeParams {
+public:
+    /// Page size in bytes.
+    uint32_t pageSize;
+    /// Size of key in bytes.
+    uint32_t keySize;
+    /// Size of user value in bytes.
+    uint32_t valSize;
+};
+
+
+/**
  * Used to abstract a key.
  *
  * This is a pure virtual base class. Any class that wants to be
@@ -239,15 +258,6 @@ public:
     /// Implement the required compare routine.
     int compare(const uint8_t *a, const uint8_t *b);
 
-    /**
-     * Convenience routine to init btree size params.
-     *
-     * @param [out] ih Header struct to store size values.
-     * @param [in] pageSize size of on disk pages, in bytes.
-     *
-     * Initialize all the size fields for an IndexHeader.
-     */
-    static void initIndexHeader(R2IndexHeader *ih, uint32_t pageSize);
 };
 
 class R2BTree {
@@ -598,6 +608,18 @@ public:
      */
     void initNonLeafPage(uint8_t *buf);
 #endif
+
+
+    /**
+     * Init the R2BTree header.
+     *
+     * @param [in,out] h The header to modify.
+     * @param [in] p Params that describe this R2BTree.
+     *
+     * The index header will be updated using the param information.
+     *
+     */
+    static bool initIndexHeader(R2IndexHeader *h, R2BTreeParams *p);
 };
 
 }
