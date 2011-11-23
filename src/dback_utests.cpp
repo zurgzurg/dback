@@ -2882,6 +2882,58 @@ TC_R2BTree01::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_R2BTree02 : public TestCase {
+    TC_R2BTree02() : TestCase("TC_R2BTree02") {;};
+    void run();
+};
+
+void
+TC_R2BTree02::run()
+{
+    uint8_t buf[4096];
+    R2BTree b;
+    R2PageAccess pa;
+    R2IndexHeader ih;
+    uint32_t idx;
+    bool found;
+    R2UUIDKey k;
+    R2BTreeParams p;
+
+    p.pageSize = sizeof(buf);
+    p.keySize = 16;
+    p.valSize = 8;
+    R2BTree::initIndexHeader(&ih, &p);
+
+    uint8_t key[ ih.keySize ];
+
+    memset(&buf[0], 0, sizeof(buf));
+    pa.header = reinterpret_cast<R2PageHeader *>(&buf[0]);
+    pa.header->pageType = PageTypeLeaf;
+    pa.keys = NULL;
+    pa.vals = NULL;
+
+    b.header = &ih;
+    b.root = &pa;
+    b.ki = &k;
+
+    for (uint32_t i = 0; i < ih.keySize; i++)
+	key[i] = 0;
+
+    idx = 2;
+
+    found = b.findKeyPosition(&pa, &key[0], &idx);
+    ASSERT_TRUE(found == false);
+    ASSERT_TRUE(idx == 0);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2933,6 +2985,7 @@ make_suite_all_tests()
 
     s->addTestCase(new dback::TC_R2BTree00());
     s->addTestCase(new dback::TC_R2BTree01());
+    s->addTestCase(new dback::TC_R2BTree02());
 
     return s;
 }
