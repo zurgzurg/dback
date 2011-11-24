@@ -2934,6 +2934,88 @@ TC_R2BTree02::run()
 
 }
 
+/************/
+
+namespace dback {
+
+/**
+ * Simple test class for 1 byte keys.
+ */
+class R2ShortKey : public R2KeyInterface {
+public:
+    int compare(const uint8_t *a, const uint8_t *b);
+};
+
+int
+R2ShortKey::compare(const uint8_t *a, const uint8_t *b)
+{
+    if (*a < *b)
+	return -1;
+    else if (*a > *b)
+	return 1;
+    return 0;
+}
+
+struct TC_R2BTree03 : public TestCase {
+    TC_R2BTree03() : TestCase("TC_R2BTree03") {;};
+    void run();
+};
+
+void
+TC_R2BTree03::run()
+{
+    R2ShortKey k;
+    const size_t bufsize = 28;
+    R2IndexHeader ih;
+
+    R2BTreeParams params;
+    params.pageSize = bufsize;
+    params.keySize = 1;
+    params.valSize = 8;
+
+    R2BTree::initIndexHeader(&ih, &params);
+    ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] > 1);
+    ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] > 0);
+
+    R2BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf[bufsize];
+    b.initLeafPage(&buf[0]);
+
+    R2PageAccess pa;
+    b.initPageAccess(&pa, &buf[0]);
+
+    uint8_t a_key[ih.keySize];
+    memset(&a_key[0], 99, sizeof(a_key));
+
+    ErrorInfo err;
+    boost::shared_mutex l;
+    uint64_t val = 97;
+    bool ok;
+
+#if 0
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    ASSERT_TRUE(ok == true);
+
+    uint32_t idx = 5;
+    ok = b.findKeyPosition(&pa, &a_key[0], &idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(idx == 0);
+    ASSERT_TRUE(pa.values[idx] == 97);
+    ASSERT_TRUE(pa.keys[0] == 99);
+
+    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    ASSERT_TRUE(ok == false);
+#endif
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -2986,6 +3068,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree00());
     s->addTestCase(new dback::TC_R2BTree01());
     s->addTestCase(new dback::TC_R2BTree02());
+    s->addTestCase(new dback::TC_R2BTree03());
 
     return s;
 }

@@ -494,6 +494,7 @@ R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 
     return true;
 }
+#endif
 
 /********************************************************/
 
@@ -502,42 +503,35 @@ R2BTree::initPageAccess(R2PageAccess *ac, uint8_t *buf)
 {
     ac->header = reinterpret_cast<R2PageHeader *>(buf);
 
-    if (ac->header->isLeaf) {
-	ac->keys = buf
-	    + sizeof(R2PageHeader)
-	    + this->header->maxNumLeafKeys * sizeof(uint64_t);
+    uint32_t n, s;
+    
+    n = this->header->maxNumKeys[ ac->header->pageType ];
+    s = this->header->valSize[ ac->header->pageType ];
 
-	ac->childPtrs = NULL;
-
-	ac->values = reinterpret_cast<uint64_t *>(buf + sizeof(R2PageHeader));
-    }
-    else {
-	ac->keys = buf
-	    + sizeof(R2PageHeader)
-	    + this->header->maxNumNLeafKeys * sizeof(uint32_t);
-	ac->childPtrs = reinterpret_cast<uint32_t *>(buf + sizeof(R2PageHeader));
-	ac->values = NULL;
-    }
+    ac->vals = buf + sizeof(R2PageHeader);
+    ac->keys = buf + sizeof(R2PageHeader) + n * s;
 
     return;
 }
 
+
 void
 R2BTree::initLeafPage(uint8_t *buf)
 {
-    memset(buf, 0, this->header->pageSizeInBytes);
+    memset(buf, 0, this->header->pageSize);
     R2PageHeader *h = reinterpret_cast<R2PageHeader *>(buf);
-    h->isLeaf = 1;
+    h->pageType = PageTypeLeaf;
     return;
 }
 
 void
 R2BTree::initNonLeafPage(uint8_t *buf)
 {
-    memset(buf, 0, this->header->pageSizeInBytes);
+    memset(buf, 0, this->header->pageSize);
+    R2PageHeader *h = reinterpret_cast<R2PageHeader *>(buf);
+    h->pageType = PageTypeNonLeaf;
     return;
 }
-#endif
 
 bool
 R2BTree::initIndexHeader(R2IndexHeader *h, R2BTreeParams *p)
