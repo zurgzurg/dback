@@ -574,6 +574,7 @@ public:
 		    ErrorInfo *err);
 
     /********************************************************/
+#endif
 
     /**
      * Init R2PageAccess pointers for a leaf node or non-leaf node.
@@ -607,8 +608,6 @@ public:
      *
      */
     void initNonLeafPage(uint8_t *buf);
-#endif
-
 
     /**
      * Init the R2BTree header.
