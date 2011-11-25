@@ -2995,21 +2995,25 @@ TC_R2BTree03::run()
     boost::shared_mutex l;
     uint64_t val = 97;
     bool ok;
+    uint8_t *vptr = reinterpret_cast<uint8_t *>(&val);
 
-#if 0
-    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    ok = b.blockInsert(&l, &pa, &a_key[0], vptr, &err);
     ASSERT_TRUE(ok == true);
 
     uint32_t idx = 5;
     ok = b.findKeyPosition(&pa, &a_key[0], &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
-    ASSERT_TRUE(pa.values[idx] == 97);
+
+    uint64_t data;
+    b.getUserData(reinterpret_cast<uint8_t *>(&data), &pa, idx);
+    ASSERT_TRUE(data == 97);
+
     ASSERT_TRUE(pa.keys[0] == 99);
 
-    ok = b.blockInsertInLeaf(&l, &pa, &a_key[0], val, &err);
+    vptr = reinterpret_cast<uint8_t *>(&val);
+    ok = b.blockInsert(&l, &pa, &a_key[0], vptr, &err);
     ASSERT_TRUE(ok == false);
-#endif
 
     this->setStatus(true);
 }

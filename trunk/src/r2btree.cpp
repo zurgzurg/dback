@@ -497,6 +497,19 @@ R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 #endif
 
 /********************************************************/
+bool
+R2BTree::getUserData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx)
+{
+    if (ac->header->pageType != PageTypeLeaf
+	|| idx >= ac->header->numKeys
+	|| data_ptr == NULL)
+	return false;
+    size_t sz = this->header->valSize[PageTypeLeaf];
+    uint8_t *src = ac->vals + idx * sz;
+    memcpy(data_ptr, src, sz);
+
+    return true;
+}
 
 void
 R2BTree::initPageAccess(R2PageAccess *ac, uint8_t *buf)

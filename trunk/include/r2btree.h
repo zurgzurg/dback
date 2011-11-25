@@ -577,6 +577,24 @@ public:
 #endif
 
     /**
+     * Get user data from leaf node.
+     *
+     * @param [out] data_ptr  Place to store user data.
+     * @param [in]  ac        Leaf node containing user data.
+     * @param [in]  idx       Index of user data to copy.
+     *
+     * If ac refers to a leaf node, idx is a valid index for that
+     * node, and data_ptr is non null, copy the user data for key idx
+     * and return true. Otherwise leave memory pointed to by data_ptr
+     * unmodified and return false.
+     *
+     * @result true if data copied successfully, false if any failure.
+     * 
+     */
+    bool getUserData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx);
+
+
+    /**
      * Init R2PageAccess pointers for a leaf node or non-leaf node.
      *
      * @param [in] ac The page access structure to be changed.
