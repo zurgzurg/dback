@@ -78,6 +78,55 @@ out:
     return result;
 }
 
+bool
+R2BTree::blockDelete(boost::shared_mutex *l,
+		     R2PageAccess *ac,
+		     uint8_t *key,
+		     ErrorInfo *err)
+{
+    bool result, found;
+    uint32_t idx, n_to_move;
+    size_t bytes_to_move;
+    uint8_t *dst, *src, ptype;
+
+
+    result = false;
+    l->lock();
+
+    found = this->findKeyPosition(ac, key, &idx);
+    if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
+	goto out;
+    }
+
+    ptype = ac->header->pageType;
+    if (ac->header->numKeys <= this->header->minNumKeys[ptype]) {
+	err->setErrNum(ErrorInfo::ERR_UNDERFLOW);
+	err->message.assign("node would underflow");
+	goto out;
+    }
+
+    n_to_move = ac->header->numKeys - idx;
+    bytes_to_move = n_to_move * this->header->keySize;
+    dst = ac->keys + idx * this->header->keySize;
+    src = ac->keys + (idx + 1) * this->header->keySize;
+    memmove(dst, src, bytes_to_move);
+
+    bytes_to_move = n_to_move * sizeof(uint32_t);
+
+    dst = ac->vals + idx * this->header->valSize[ ac->header->pageType ];
+    src = ac->vals + (idx + 1) * this->header->valSize[ ac->header->pageType ];
+    memmove(dst, src, bytes_to_move);
+
+    ac->header->numKeys--;
+    result = true;
+
+out:
+    l->unlock();
+    return result;
+}
+
 /********************************************************/
 
 bool
@@ -164,60 +213,6 @@ R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
 
 #if 0
 bool
-R2BTree::blockDeleteFromNonLeaf(boost::shared_mutex *l,
-			      R2PageAccess *ac,
-			      uint8_t *key,
-			      ErrorInfo *err)
-{
-    bool result, found;
-    uint32_t idx, n_to_move;
-    size_t bytes_to_move;
-    uint8_t *dst, *src;
-
-    result = false;
-    l->lock();
-
-    if (ac->header->isLeaf != 0) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
-
-    if (ac->header->numKeys == 0) {
-	err->setErrNum(ErrorInfo::ERR_NODE_EMPTY);
-	err->message.assign("node is empty");
-	goto out;
-    }
-
-    found = this->findKeyPosition(ac, key, &idx);
-    if (found == false) {
-	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
-	err->message.assign("key not found");
-	goto out;
-    }
-
-    if (ac->header->numKeys > 1) {
-	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->keySize;
-	dst = ac->keys + idx * this->header->keySize;
-	src = ac->keys + (idx + 1) * this->header->keySize;
-	memmove(dst, src, bytes_to_move);
-
-	bytes_to_move = n_to_move * sizeof(uint32_t);
-	dst = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx]);
-	src = reinterpret_cast<uint8_t *>(&ac->childPtrs[idx + 1]);
-	memmove(dst, src, bytes_to_move);
-    }
-
-    ac->header->numKeys--;
-    result = true;
-
-out:
-    l->unlock();
-    return result;
-}
-
-bool
 R2BTree::blockFindInNonLeaf(boost::shared_mutex *l,
 			  R2PageAccess *ac,
 			  uint8_t *key,
@@ -287,59 +282,6 @@ out:
     return result;
 }
 
-bool
-R2BTree::blockDeleteFromLeaf(boost::shared_mutex *l,
-			   R2PageAccess *ac,
-			   uint8_t *key,
-			   ErrorInfo *err)
-{
-    bool result, found;
-    uint32_t idx, n_to_move;
-    size_t bytes_to_move;
-    uint8_t *dst, *src;
-
-    result = false;
-    l->lock();
-
-    if (ac->header->isLeaf != 1) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
-
-    if (ac->header->numKeys == 0) {
-	err->setErrNum(ErrorInfo::ERR_NODE_EMPTY);
-	err->message.assign("node is empty");
-	goto out;
-    }
-
-    found = this->findKeyPosition(ac, key, &idx);
-    if (found == false) {
-	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
-	err->message.assign("key not found");
-	goto out;
-    }
-
-    if (ac->header->numKeys > 1) {
-	n_to_move = ac->header->numKeys - idx;
-	bytes_to_move = n_to_move * this->header->keySize;
-	dst = ac->keys + idx * this->header->keySize;
-	src = ac->keys + (idx + 1) * this->header->keySize;
-	memmove(dst, src, bytes_to_move);
-
-	bytes_to_move = n_to_move * sizeof(uint64_t);
-	dst = reinterpret_cast<uint8_t *>(&ac->values[idx]);
-	src = reinterpret_cast<uint8_t *>(&ac->values[idx + 1]);
-	memmove(dst, src, bytes_to_move);
-    }
-
-    ac->header->numKeys--;
-    result = true;
-
-out:
-    l->unlock();
-    return result;
-}
 
 /********************************************************/
 
