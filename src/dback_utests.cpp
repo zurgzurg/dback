@@ -3305,7 +3305,6 @@ TC_R2BTree06::run()
 
 }
 
-#if 0
 /************/
 
 namespace dback {
@@ -3367,17 +3366,14 @@ TC_R2BTree07::run()
     ASSERT_TRUE(ok == true);
 
     a_key = 2;
-    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == true);
 
-    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == false);
     
     a_key = 1;
-    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
-    ASSERT_TRUE(ok == true);
-
-    ok = b.blockDeleteFromLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
@@ -3385,6 +3381,7 @@ TC_R2BTree07::run()
 
 }
 
+#if 0
 /************/
 
 namespace dback {
@@ -4660,9 +4657,9 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree04());
     s->addTestCase(new dback::TC_R2BTree05());
     s->addTestCase(new dback::TC_R2BTree06());
+    s->addTestCase(new dback::TC_R2BTree07());
 
 #if 0
-    s->addTestCase(new dback::TC_R2BTree07());
     s->addTestCase(new dback::TC_R2BTree08());
     s->addTestCase(new dback::TC_R2BTree09());
     s->addTestCase(new dback::TC_R2BTree10());

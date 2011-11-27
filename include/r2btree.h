@@ -303,6 +303,49 @@ public:
 		     uint8_t *val,
 		     ErrorInfo *err);
 
+    /**
+     * Blocking delete, remove a key from a node.
+     *
+     * @param [in] l shared lock
+     * @param [in] ac Pointer to info about the particular leaf
+     *                page to delete from.
+     * @param [in] key Pointer to a the key to be deleted.
+     * @param [out] err If an error occurs this will contain error info.
+     *
+     * Blocking delete. Routine will block until it acquires an
+     * exclusive lock on l. Lock is released at end of routine. This
+     * routine will only delete the key if it does not result in an
+     * underflow condition (key count below the required minimum).
+     *
+     * If the key is found, and deleting this key will not result
+     * in an underflow then the key is deleted and true is returned.
+     * Otherwise false is returned and the node is not modified.
+     *
+     * @return Return true if a key was deleted, or return false if
+     * the delete could not be done. If false is returned the node
+     * is not modified.
+     */
+    bool blockDelete(boost::shared_mutex *l,
+		     R2PageAccess *ac,
+		     uint8_t *key,
+		     ErrorInfo *err);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /********************************************************/
 
@@ -357,36 +400,6 @@ public:
 
 #if 0
     /**
-     * Blocking delete, remove a key from a non-leaf node.
-     *
-     * @param [in] l shared lock
-     * @param [in] ac Pointer to info about the particular leaf
-     *                page to delete from.
-     * @param [in] key Pointer to a the key to be deleted.
-     * @param [out] err If an error occurs this will contain error info.
-     *
-     * Blocking delete. Routine will block until it acquires an
-     * exclusive lock on l. Lock is released at end of routine. Delete
-     * a key from the non-leaf node. Return true iff delete succeeds,
-     * false otherwise. When false is returned the node is not
-     * modified. This routine will delete the last key from a node, in
-     * this case it is up to the caller to decide what to do with the
-     * now empty non-leaf node.  Routine returns false if there are no
-     * more elements in the node.
-     *
-     * @return Return true if a key was deleted, or return false if
-     * the delete could not be done. If false is returned the node
-     * is not modified.
-     */
-    bool blockDeleteFromNonLeaf(boost::shared_mutex *l,
-				R2PageAccess *ac,
-				uint8_t *key,
-				ErrorInfo *err);
-
-
-
-
-    /**
      * Blocking find, search for a key in a non leaf node.
      *
      * @param [in] l shared lock
@@ -440,35 +453,6 @@ public:
 			 uint8_t *key,
 			 uint64_t *val,
 			 ErrorInfo *err);
-
-    /**
-     * Blocking delete, remove a key from a leaf node.
-     *
-     * @param [in] l shared lock
-     * @param [in] ac Pointer to info about the particular leaf
-     *                page to delete from.
-     * @param [in] key Pointer to a the key to be deleted.
-     * @param [out] err If an error occurs this will contain error info.
-     *
-     * Blocking delete. Routine will block until it acquires an
-     * exclusive lock on l. Lock is released at end of routine. Delete
-     * a key from the leaf node. Return true iff delete succeeds,
-     * false otherwise. When false is returned the node is not
-     * modified. This routine will delete the last key from a node.
-     * Routine returns false if there are no more elements in the node.
-     *
-     * @note Underflow (removing all keys) and node joining is not
-     * yet handled.
-     *
-     * @return Return true if a key was deleted, or return false if
-     * the delete could not be done. If false is returned the node
-     * is not modified.
-     */
-    bool blockDeleteFromLeaf(boost::shared_mutex *l,
-			     R2PageAccess *ac,
-			     uint8_t *key,
-			     ErrorInfo *err);
-
 
     /********************************************************/
 
