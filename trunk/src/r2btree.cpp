@@ -149,7 +149,7 @@ R2BTree::blockFind(boost::shared_mutex *l,
     }
 
     if (val != NULL) {
-	ok = this->getUserData(val, ac, idx);
+	ok = this->getData(val, ac, idx);
 	result = ok;
     }
     else {
@@ -397,13 +397,11 @@ R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 
 /********************************************************/
 bool
-R2BTree::getUserData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx)
+R2BTree::getData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx)
 {
-    if (ac->header->pageType != PageTypeLeaf
-	|| idx >= ac->header->numKeys
-	|| data_ptr == NULL)
+    if (idx >= ac->header->numKeys || data_ptr == NULL)
 	return false;
-    size_t sz = this->header->valSize[PageTypeLeaf];
+    size_t sz = this->header->valSize[ ac->header->pageType ];
     uint8_t *src = ac->vals + idx * sz;
     memcpy(data_ptr, src, sz);
 
