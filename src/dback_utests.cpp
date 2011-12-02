@@ -3689,8 +3689,6 @@ TC_R2BTree10::run()
 
 }
 
-#if 0
-
 /************/
 
 namespace dback {
@@ -3716,6 +3714,9 @@ TC_R2BTree11::run()
     ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] >= 2);
     ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] > 0);
 
+    ih.minNumKeys[PageTypeLeaf] = 0;
+    ih.minNumKeys[PageTypeNonLeaf] = 0;
+
     R2BTree b;
     b.header = &ih;
     b.root = NULL;
@@ -3729,46 +3730,49 @@ TC_R2BTree11::run()
 
     ASSERT_TRUE(ih.keySize == 1);
 
-    union uv64 {
+    union uv {
 	uint64_t val64;
+	uint32_t val32;
 	uint8_t  val8;
     };
 
     uint8_t a_key;
     ErrorInfo err;
     boost::shared_mutex l;
-    uint32_t child;
+    uv val;
     bool ok;
     uint32_t idx;
 
-    child = 2;
+    val.val32 = 2;
     a_key = 2;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
-    child = 1;
+    val.val32 = 1;
     a_key = 1;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
     a_key = 2;
-    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == true);
 
-    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == false);
     
     a_key = 1;
-    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == true);
 
-    ok = b.blockDeleteFromNonLeaf(&l, &pa, &a_key, &err);
+    ok = b.blockDelete(&l, &pa, &a_key, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
 }
 
 }
+
+#if 0
 
 /************/
 
@@ -4679,9 +4683,9 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree08());
     s->addTestCase(new dback::TC_R2BTree09());
     s->addTestCase(new dback::TC_R2BTree10());
+    s->addTestCase(new dback::TC_R2BTree11());
 
 #if 0
-    s->addTestCase(new dback::TC_R2BTree11());
     s->addTestCase(new dback::TC_R2BTree12());
     s->addTestCase(new dback::TC_R2BTree13());
     s->addTestCase(new dback::TC_R2BTree14());
