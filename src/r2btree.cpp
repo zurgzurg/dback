@@ -127,6 +127,42 @@ out:
     return result;
 }
 
+bool
+R2BTree::blockFind(boost::shared_mutex *l,
+		   R2PageAccess *ac,
+		   uint8_t *key,
+		   uint8_t *val,
+		   ErrorInfo *err)
+{
+    bool result, found, ok;
+    uint32_t idx;
+    uint8_t ptype;
+
+    result = false;
+    l->lock_shared();
+
+    found = this->findKeyPosition(ac, key, &idx);
+    if (found == false) {
+	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
+	err->message.assign("key not found");
+	goto out;
+    }
+
+    if (val != NULL) {
+	ok = this->getUserData(val, ac, idx);
+	result = ok;
+    }
+    else {
+	result = true;
+    }
+
+out:
+    l->unlock_shared();
+    return result;
+}
+
+
+
 /********************************************************/
 
 bool
@@ -203,86 +239,7 @@ R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
     }
 }
 
-
-
-
-
-
-
-
-
 #if 0
-bool
-R2BTree::blockFindInNonLeaf(boost::shared_mutex *l,
-			  R2PageAccess *ac,
-			  uint8_t *key,
-			  uint32_t *child,
-			  ErrorInfo *err)
-{
-    bool result, found;
-    uint32_t idx;
-
-    result = false;
-    l->lock_shared();
-
-    if (ac->header->isLeaf != 0) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
-    
-    found = this->findKeyPosition(ac, key, &idx);
-    if (found == false) {
-	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
-	err->message.assign("key not found");
-	goto out;
-    }
-
-    if (child != NULL)
-	*child = ac->childPtrs[idx];
-    result = true;
-
-out:
-    l->unlock_shared();
-    return result;
-}
-
-bool
-R2BTree::blockFindInLeaf(boost::shared_mutex *l,
-		       R2PageAccess *ac,
-		       uint8_t *key,
-		       uint64_t *val,
-		       ErrorInfo *err)
-{
-    bool result, found;
-    uint32_t idx;
-
-    result = false;
-    l->lock_shared();
-
-    if (ac->header->isLeaf != 1) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("wrong page type");
-	goto out;
-    }
-    
-    found = this->findKeyPosition(ac, key, &idx);
-    if (found == false) {
-	err->setErrNum(ErrorInfo::ERR_KEY_NOT_FOUND);
-	err->message.assign("key not found");
-	goto out;
-    }
-
-    if (val != NULL)
-	*val = ac->values[idx];
-    result = true;
-
-out:
-    l->unlock_shared();
-    return result;
-}
-
-
 /********************************************************/
 
 bool

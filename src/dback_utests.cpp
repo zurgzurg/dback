@@ -3499,8 +3499,6 @@ tc_r2btree08_do_delete(void *ptr)
 
 }
 
-#if 0
-
 /************/
 
 namespace dback {
@@ -3515,7 +3513,7 @@ TC_R2BTree09::run()
 {
     R2ShortKey k;
     // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
-    const size_t bufsize = 35;
+    const size_t bufsize = 80;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -3527,6 +3525,8 @@ TC_R2BTree09::run()
     ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] >= 2);
     ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] > 0);
     ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] >= 3);
+
+    ih.maxNumKeys[PageTypeLeaf] = 3;
 
     R2BTree b;
     b.header = &ih;
@@ -3569,40 +3569,42 @@ TC_R2BTree09::run()
     ASSERT_TRUE(ok == true);
 
     a_key = 5;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(val == 5);
+    ASSERT_TRUE(val.val64 == 5);
 
     a_key = 10;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(val == 10);
+    ASSERT_TRUE(val.val64 == 10);
 
     a_key = 3;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(val == 3);
+    ASSERT_TRUE(val.val64 == 3);
 
     a_key = 0;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 11;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 4;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 6;
-    ok = b.blockFind(&l, &pa, &a_key, &val, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
 }
 
 }
+
+#if 0
 
 /************/
 
@@ -4669,9 +4671,9 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree06());
     s->addTestCase(new dback::TC_R2BTree07());
     s->addTestCase(new dback::TC_R2BTree08());
+    s->addTestCase(new dback::TC_R2BTree09());
 
 #if 0
-    s->addTestCase(new dback::TC_R2BTree09());
     s->addTestCase(new dback::TC_R2BTree10());
     s->addTestCase(new dback::TC_R2BTree11());
     s->addTestCase(new dback::TC_R2BTree12());
