@@ -546,7 +546,7 @@ public:
      * @result true if data copied successfully, false if any failure.
      * 
      */
-    bool getUserData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx);
+    bool getData(uint8_t *data_ptr, R2PageAccess *ac, uint32_t idx);
 
 
     /**

@@ -3006,7 +3006,7 @@ TC_R2BTree03::run()
     ASSERT_TRUE(idx == 0);
 
     uint64_t data;
-    b.getUserData(reinterpret_cast<uint8_t *>(&data), &pa, idx);
+    b.getData(reinterpret_cast<uint8_t *>(&data), &pa, idx);
     ASSERT_TRUE(data == 97);
 
     ASSERT_TRUE(pa.keys[0] == 99);
@@ -3086,7 +3086,7 @@ TC_R2BTree04::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
-    ok = b.getUserData(&val2.val8, &pa, idx);
+    ok = b.getData(&val2.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val2.val64 == 1);
  
@@ -3094,7 +3094,7 @@ TC_R2BTree04::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
-    ok = b.getUserData(&val2.val8, &pa, idx);
+    ok = b.getData(&val2.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val2.val64 == 2);
 
@@ -3168,7 +3168,7 @@ TC_R2BTree05::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
-    ok = b.getUserData(&val.val8, &pa, idx);
+    ok = b.getData(&val.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 2);
  
@@ -3176,7 +3176,7 @@ TC_R2BTree05::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
-    ok = b.getUserData(&val.val8, &pa, idx);
+    ok = b.getData(&val.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 1);
 
@@ -3264,7 +3264,7 @@ TC_R2BTree06::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
-    ok = b.getUserData(&val.val8, &pa, idx);
+    ok = b.getData(&val.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 5);
 
@@ -3272,7 +3272,7 @@ TC_R2BTree06::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 2);
-    ok = b.getUserData(&val.val8, &pa, idx);
+    ok = b.getData(&val.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 10);
 
@@ -3280,7 +3280,7 @@ TC_R2BTree06::run()
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
-    ok = b.getUserData(&val.val8, &pa, idx);
+    ok = b.getData(&val.val8, &pa, idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 3);
 
@@ -3604,8 +3604,6 @@ TC_R2BTree09::run()
 
 }
 
-#if 0
-
 /************/
 
 namespace dback {
@@ -3645,45 +3643,53 @@ TC_R2BTree10::run()
 
     ASSERT_TRUE(ih.keySize == 1);
 
-    union uv64 {
+    union uv {
 	uint64_t val64;
+	uint32_t val32;
 	uint8_t  val8;
     };
 
     uint8_t a_key;
     ErrorInfo err;
     boost::shared_mutex l;
-    uint32_t child;
+    uv val;
     bool ok;
     uint32_t idx;
 
-    child = 1;
+    val.val32 = 1;
     a_key = 1;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
-    child = 2;
+    val.val32 = 2;
     a_key = 2;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
     a_key = 1;
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 0);
-    ASSERT_TRUE(pa.childPtrs[idx] == 1);
+
+    ok = b.getData(&val.val8, &pa, idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(val.val32 == 1);
  
     a_key = 2;
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(idx == 1);
-    ASSERT_TRUE(pa.childPtrs[idx] == 2);
+
+    ok = b.getData(&val.val8, &pa, idx);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(val.val32 == 2);
 
     this->setStatus(true);
 }
 
 }
 
+#if 0
 
 /************/
 
@@ -4672,9 +4678,9 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree07());
     s->addTestCase(new dback::TC_R2BTree08());
     s->addTestCase(new dback::TC_R2BTree09());
+    s->addTestCase(new dback::TC_R2BTree10());
 
 #if 0
-    s->addTestCase(new dback::TC_R2BTree10());
     s->addTestCase(new dback::TC_R2BTree11());
     s->addTestCase(new dback::TC_R2BTree12());
     s->addTestCase(new dback::TC_R2BTree13());
