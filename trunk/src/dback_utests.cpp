@@ -3381,14 +3381,13 @@ TC_R2BTree07::run()
 
 }
 
-#if 0
 /************/
 
 namespace dback {
 
 
-static void *tc_btree08_do_insert(void *);
-static void *tc_btree08_do_delete(void *);
+static void *tc_r2btree08_do_insert(void *);
+static void *tc_r2btree08_do_delete(void *);
 
 struct TC_R2BTree08 : public TestCase {
     R2BTree b;
@@ -3403,7 +3402,7 @@ void
 TC_R2BTree08::run()
 {
     R2ShortKey k;
-    const size_t bufsize = 28;
+    const size_t bufsize = 280;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -3414,6 +3413,9 @@ TC_R2BTree08::run()
     R2BTree::initIndexHeader(&ih, &params);
     ASSERT_TRUE(ih.maxNumKeys[PageTypeNonLeaf] >= 2);
     ASSERT_TRUE(ih.minNumKeys[PageTypeNonLeaf] > 0);
+
+    ih.minNumKeys[PageTypeLeaf] = 0;
+    ih.minNumKeys[PageTypeNonLeaf] = 0;
 
     this->b.header = &ih;
     this->b.root = NULL;
@@ -3435,9 +3437,9 @@ TC_R2BTree08::run()
     ASSERT_TRUE(err == 0);
     
     pthread_t t1, t2;
-    err = pthread_create(&t1, &a, tc_btree08_do_delete, this);
+    err = pthread_create(&t1, &a, tc_r2btree08_do_delete, this);
     ASSERT_TRUE(err == 0);
-    err = pthread_create(&t2, &a, tc_btree08_do_insert, this);
+    err = pthread_create(&t2, &a, tc_r2btree08_do_insert, this);
     ASSERT_TRUE(err == 0);
 
     void *junk;
@@ -3450,13 +3452,19 @@ TC_R2BTree08::run()
 }
 
 static void *
-tc_btree08_do_insert(void *ptr)
+tc_r2btree08_do_insert(void *ptr)
 {
     static int count = 0;
     uint8_t key;
     bool ok;
-    uint64_t val;
     ErrorInfo err;
+
+    union uv64 {
+	uint64_t val64;
+	uint8_t  val8;
+    };
+
+    uv64 val;
 
     TC_R2BTree08 *tc = reinterpret_cast<TC_R2BTree08 *>(ptr);
     key = 1;
@@ -3471,7 +3479,7 @@ tc_btree08_do_insert(void *ptr)
 }
 
 static void *
-tc_btree08_do_delete(void *ptr)
+tc_r2btree08_do_delete(void *ptr)
 {
     static int count = 0;
     bool ok;
@@ -3481,7 +3489,7 @@ tc_btree08_do_delete(void *ptr)
     TC_R2BTree08 *tc = reinterpret_cast<TC_R2BTree08 *>(ptr);
     key = 1;
     while (count < 5) {
-	ok = tc->b.blockDeleteFromLeaf(&tc->l, &tc->pa, &key, &err) ;
+	ok = tc->b.blockDelete(&tc->l, &tc->pa, &key, &err) ;
 	if (ok)
 	    count++;
     }
@@ -3490,6 +3498,8 @@ tc_btree08_do_delete(void *ptr)
 }
 
 }
+
+#if 0
 
 /************/
 
@@ -4658,9 +4668,9 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree05());
     s->addTestCase(new dback::TC_R2BTree06());
     s->addTestCase(new dback::TC_R2BTree07());
+    s->addTestCase(new dback::TC_R2BTree08());
 
 #if 0
-    s->addTestCase(new dback::TC_R2BTree08());
     s->addTestCase(new dback::TC_R2BTree09());
     s->addTestCase(new dback::TC_R2BTree10());
     s->addTestCase(new dback::TC_R2BTree11());
