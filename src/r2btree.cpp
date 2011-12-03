@@ -166,6 +166,121 @@ out:
 /********************************************************/
 
 bool
+R2BTree::splitNode(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
+		   ErrorInfo *err)
+{
+    if (full == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    if (empty == NULL
+	|| empty->header->numKeys != 0) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    int ft = full->header->pageType;
+    int et = empty->header->pageType;
+
+    if (ft != et || full->header->numKeys != this->header->maxNumKeys[ft]) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }	
+
+    if (key == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    size_t bytes;
+    uint8_t *src;
+    uint32_t move_start_idx = full->header->numKeys / 2;
+    uint32_t n_to_move = full->header->numKeys - move_start_idx;
+
+    bytes = n_to_move * this->header->keySize;
+    src = full->keys + move_start_idx * this->header->keySize;
+    memmove(empty->keys, src, bytes);
+
+    src = full->keys + move_start_idx * this->header->keySize;
+    memmove(key, src, this->header->keySize);
+
+    bytes = n_to_move * this->header->valSize[ft];
+    src = full->vals + move_start_idx * this->header->valSize[ft];
+    memmove(empty->vals, src, bytes);
+
+    empty->header->numKeys = n_to_move;
+    full->header->numKeys = move_start_idx;
+
+    return true;
+}
+
+bool
+R2BTree::concatNodes(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
+		     ErrorInfo *err)
+{
+    if (dst == NULL || src == NULL) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    int dt = dst->header->pageType;
+    int st = src->header->pageType;
+
+    if (dt != st) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    if (dst->header->numKeys + src->header->numKeys
+	!= this->header->maxNumKeys[st]) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
+    size_t dst_idx, bytes_to_move;
+    size_t vsize = this->header->valSize[dt];
+
+    if ( ! dstIsFirst) {
+	size_t slots_needed = src->header->numKeys;
+	uint8_t *val_dst = dst->vals + slots_needed * vsize;
+	bytes_to_move = dst->header->numKeys * vsize;
+	memmove(val_dst, dst->vals, bytes_to_move);
+
+	uint8_t *key_dst = dst->keys + slots_needed * this->header->keySize;
+	bytes_to_move = dst->header->numKeys * this->header->keySize;
+	memmove(key_dst, dst->keys, bytes_to_move);
+
+	dst_idx = 0;
+    }
+    else {
+	dst_idx = dst->header->numKeys;
+    }
+
+    uint8_t *key_dst = dst->keys + dst_idx * this->header->keySize;
+    bytes_to_move = src->header->numKeys * this->header->keySize;
+    memmove(key_dst, src->keys, bytes_to_move);
+
+    uint8_t *val_dst = dst->vals + dst_idx * vsize;
+    bytes_to_move = src->header->numKeys * vsize;
+    memmove(val_dst, src->vals, bytes_to_move);
+
+    dst->header->numKeys += src->header->numKeys;
+    src->header->numKeys = 0;
+
+    return true;
+}
+
+/********************************************************/
+
+bool
 R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
 {
     size_t n1, n2, n, ks;
@@ -238,162 +353,6 @@ R2BTree::findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx)
 	}
     }
 }
-
-#if 0
-/********************************************************/
-
-bool
-R2BTree::splitLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
-		 ErrorInfo *err)
-{
-    if (full == NULL
-	|| full->header->isLeaf != 1
-	|| full->header->numKeys != this->header->maxNumLeafKeys) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-    if (empty == NULL
-	|| empty->header->isLeaf != 1
-	|| empty->header->numKeys != 0) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-    if (key == NULL) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-
-    size_t bytes;
-    uint64_t *vsrc;
-    uint8_t *src, *dst;
-    uint32_t move_start_idx = full->header->numKeys / 2;
-    uint32_t n_to_move = full->header->numKeys - move_start_idx;
-
-    bytes = n_to_move * this->header->keySize;
-    src = full->keys + move_start_idx * this->header->keySize;
-    dst = empty->keys;
-    memmove(dst, src, bytes);
-
-    src = full->keys + move_start_idx * this->header->keySize;
-    memmove(key, src, this->header->keySize);
-
-    bytes = n_to_move * sizeof(uint64_t);
-    vsrc = full->values + move_start_idx * sizeof(uint64_t);
-    src = reinterpret_cast<uint8_t *>(vsrc);
-    dst = reinterpret_cast<uint8_t *>(empty->values);
-    memmove(dst, src, bytes);
-
-    empty->header->numKeys = n_to_move;
-    full->header->numKeys = move_start_idx;
-
-
-    return true;
-}
-
-bool
-R2BTree::splitNonLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
-		    ErrorInfo *err)
-{
-    if (full == NULL
-	|| full->header->isLeaf != 0
-	|| full->header->numKeys != this->header->maxNumNLeafKeys) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-    if (empty == NULL
-	|| empty->header->isLeaf != 0
-	|| empty->header->numKeys != 0) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-    if (key == NULL) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-
-    size_t bytes;
-    uint32_t *child_src;
-    uint8_t *src, *dst;
-    uint32_t move_start_idx = this->header->minNumNLeafKeys;
-    uint32_t n_to_move = full->header->numKeys - move_start_idx;
-
-    bytes = n_to_move * this->header->keySize;
-    src = full->keys + move_start_idx * this->header->keySize;
-    dst = empty->keys;
-    memmove(dst, src, bytes);
-
-    src = full->keys + move_start_idx * this->header->keySize;
-    memmove(key, src, this->header->keySize);
-
-    bytes = n_to_move * sizeof(uint32_t);
-    child_src = full->childPtrs + move_start_idx * sizeof(uint32_t);
-    src = reinterpret_cast<uint8_t *>(child_src);
-    dst = reinterpret_cast<uint8_t *>(empty->childPtrs);
-    memmove(dst, src, bytes);
-
-    empty->header->numKeys = n_to_move;
-    full->header->numKeys = move_start_idx;
-
-    return true;
-}
-
-/********************************************************/
-
-bool
-R2BTree::concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
-		  ErrorInfo *err)
-{
-    if (dst == NULL || src == NULL) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-
-    if (dst->header->numKeys + src->header->numKeys
-	> this->header->maxNumLeafKeys) {
-	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
-	err->message.assign("invalid input");
-	return false;
-    }
-
-    size_t dst_idx, bytes_to_move;
-
-    if ( ! dstIsFirst) {
-	size_t slots_needed = src->header->numKeys;
-	uint64_t *val_dst = dst->values + slots_needed;
-	bytes_to_move = dst->header->numKeys * sizeof(uint64_t);
-	memmove(val_dst, dst->values, bytes_to_move);
-
-	uint8_t *key_dst = dst->keys + slots_needed * this->header->keySize;
-	bytes_to_move = dst->header->numKeys * this->header->keySize;
-	memmove(key_dst, dst->keys, bytes_to_move);
-
-	dst_idx = 0;
-    }
-    else {
-	dst_idx = dst->header->numKeys;
-    }
-
-    uint8_t *key_dst = dst->keys + dst_idx * this->header->keySize;
-    bytes_to_move = src->header->numKeys * this->header->keySize;
-    memmove(key_dst, src->keys, bytes_to_move);
-
-    uint64_t *val_dst = dst->values + dst_idx;
-    bytes_to_move = src->header->numKeys * sizeof(uint64_t);
-    memmove(val_dst, src->values, bytes_to_move);
-
-    dst->header->numKeys += src->header->numKeys;
-    src->header->numKeys = 0;
-
-    return true;
-}
-#endif
 
 /********************************************************/
 bool
