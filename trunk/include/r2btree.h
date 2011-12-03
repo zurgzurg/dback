@@ -363,14 +363,76 @@ public:
 
 
 
+    /********************************************************/
 
 
+    /**
+     * Split a node.
+     *
+     * @param [in,out] full   The full node to split.
+     * @param [in,out] empty  The empty node to use.
+     * @param [out] key       The key to promote to higher node.
+     * @param [out] err       Error info output.
+     *
+     * Split a node into two nodes, return true if successful.  The
+     * node full must have the maximum number of keys, else false is
+     * returned. The empty node must have zero keys else false is
+     * returned. key must be non-null, else false is returned, and it
+     * must point to a buffer large enough to store a key. The two nodes
+     * must be of the same page type, else false is returned.
+     *
+     * The full node will be split into two, with keys (and associated
+     * data) moved into the empty page. A suitable 'middle' key from
+     * full will be chosen, and copied into the buffer pointed to by
+     * key. All keys and associated values greater than or equal to
+     * key will be copied to empty.
+     *
+     * If false is returned full and empty are unchanged.
+     *
+     * @note Locking is the callers responsibility.
+     *
+     * @result true if node successfully split, false otherwise.
+     */
+    bool splitNode(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
+		   ErrorInfo *err);
 
 
-
-
-
-
+    
+    /**
+     * Concatenate two nodes.
+     *
+     * @param [in,out] dst The destination.
+     * @param [in]     src The source node.
+     * @param [in]     dstIsFirst Indicates node ordering.
+     * @param [out]    err Error info output.
+     *
+     * Concatenate two nodes into one. The final result will be
+     * stored in node dst. src and dst are expected to be two adjascent
+     * nodes - that is they both have the same parent and the child node
+     * pointers that refer to them are next to each other. dstIsFirst
+     * indicates which keys are "smaller" than the other. If dstIsFirst
+     * is true then the keys in dst are all less than the keys in src,
+     * if false the keys in dst are all larger than src.
+     *
+     * Each node must have exactly the minimum number of keys and sum
+     * of the two must be exactly equal to the max number of keys.
+     *
+     * true will be returned only if the two nodes are properly merged.
+     * Otherwise false is returned, the error condition will be set,
+     * and input nodes are not not modified. If the concat succeeds src
+     * will have no keys and dst will have all keys.
+     * 
+     * If src or dst is null false is returned. If there are too many
+     * keys false is returned.
+     *
+     *
+     * @note Locking is the callers responsibility.
+     *
+     * @result true if success, false otherwise.
+     * 
+     */
+    bool concatNodes(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
+		     ErrorInfo *err);
 
 
     /********************************************************/
@@ -401,135 +463,7 @@ public:
      */
     bool findKeyPosition(R2PageAccess *ac, uint8_t *key, uint32_t *idx);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
     /********************************************************/
-
-    /**
-     * Split a leaf node.
-     *
-     * @param [in,out] full   The full leaf node to split.
-     * @param [in,out] empty  The empty leaf node to use.
-     * @param [out] key       The key to promote to higher node.
-     * @param [out] err       Error info output.
-     *
-     * Split a leaf node into two leaf nodes, return true if successful.
-     * The full node must be full, else false is returned. The empty node
-     * must be empty else false is returned. Both nodes, full and empty,
-     * must be leaf nodes, else false is returned. key must be non-null,
-     * else false is returned, and it must point to a buffer large enough
-     * to store a key.
-     *
-     * The full page will be split into two, with keys moved into the
-     * empty page. A suitable 'middle' key from full will be chosen,
-     * and copied into the buffer pointed to by key. All keys and
-     * associated values greater than or equal to key will be copied
-     * to empty.
-     *
-     * If false is returned full and empty are unchanged.
-     *
-     * @note Locking is the callers responsibility.
-     *
-     * @result true if leaf successfully split, false otherwise.
-     */
-    bool splitLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
-		   ErrorInfo *err);
-
-
-    
-    /**
-     * Split a non leaf node.
-     *
-     * @param [in,out] full   The full non leaf node to split.
-     * @param [in,out] empty  The empty non leaf node to use.
-     * @param [out] key       The key to promote to higher node.
-     * @param [out] err       Error info output.
-     *
-     * Split a non leaf node into two non leaf nodes, return true if
-     * successful.  The full node must be full, else false is
-     * returned. The empty node must be empty else false is
-     * returned. Both nodes, full and empty, must be non leaf nodes,
-     * else false is returned. key must be non-null, else false is
-     * returned, and it must point to a buffer large enough to store a
-     * key.
-     *
-     * The full page will be split into two, with keys moved into the
-     * empty page. A suitable 'middle' key from full will be chosen,
-     * and copied into the buffer pointed to by key. All keys and
-     * associated values greater than or equal to key will be copied
-     * to empty.
-     *
-     * If false is returned full and empty are unchanged, the error
-     * code and message will be stored into err.
-     *
-     * @note Locking is the callers responsibility.
-     *
-     * @result true if leaf successfully split, false otherwise.
-     *
-     */
-    bool splitNonLeaf(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
-		      ErrorInfo *err);
-
-    /********************************************************/
-
-    /**
-     * Concatenate two leaf nodes.
-     *
-     * @param [in,out] dst The destination.
-     * @param [in]     src The source node.
-     * @param [in]     dstIsFirst Indicates node ordering.
-     * @param [out]    err Error info output.
-     *
-     * Concatenate two lead nodes into one. The final result will be
-     * stored in node dst. src and dst are expected to be two adjascent
-     * nodes - that is they both have the same parent and the child node
-     * pointers that refer to them are next to each other. dstIsFirst
-     * indicates which keys are "smaller" than the other. If dstIsFirst
-     * is true then the keys in dst are all less than the keys in src,
-     * if false the keys in dst are all larger than src.
-     *
-     * The total number of keys in src and dst must be less than or
-     * equal to the max number of keys.
-     *
-     * true will be returned only if the two nodes are properly merged.
-     * otherwise false is returned, the error condition will be set,
-     * and input nodes are not not modified. When properly merged src
-     * will have no keys and dst will have all keys.
-     * 
-     * If src or dst is null false is returned. If there are too many
-     * keys false is returned.
-     *
-     *
-     * @note Locking is the callers responsibility.
-     *
-     */
-    bool concatLeaf(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
-		    ErrorInfo *err);
-
-    /********************************************************/
-#endif
 
     /**
      * Get user data from leaf node.

@@ -3772,8 +3772,6 @@ TC_R2BTree11::run()
 
 }
 
-#if 0
-
 /************/
 
 namespace dback {
@@ -3788,7 +3786,7 @@ TC_R2BTree12::run()
 {
     R2ShortKey k;
     // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
-    const size_t bufsize = 35;
+    const size_t bufsize = 200;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -3814,62 +3812,63 @@ TC_R2BTree12::run()
 
     ASSERT_TRUE(ih.keySize == 1);
 
-    union uv64 {
+    union uv {
 	uint64_t val64;
+	uint32_t val32;
 	uint8_t  val8;
     };
 
     uint8_t a_key;
     ErrorInfo err;
     boost::shared_mutex l;
-    uint32_t child;
+    uv val;
     bool ok;
     uint32_t idx;
 
-    child = 10;
+    val.val32 = 10;
     a_key = 10;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
-    child = 5;
+    val.val32 = 5;
     a_key = 5;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
-    child = 3;
+    val.val32 = 3;
     a_key = 3;
-    ok = b.blockInsert(&l, &pa, &a_key, child, &err);
+    ok = b.blockInsert(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
 
     a_key = 5;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(child == 5);
+    ASSERT_TRUE(val.val32 == 5);
 
     a_key = 10;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(child == 10);
+    ASSERT_TRUE(val.val32 == 10);
 
     a_key = 3;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == true);
-    ASSERT_TRUE(child == 3);
+    ASSERT_TRUE(val.val32 == 3);
 
     a_key = 0;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 11;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 4;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     a_key = 6;
-    ok = b.blockFind(&l, &pa, &a_key, &child, &err);
+    ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
 
     this->setStatus(true);
@@ -3891,7 +3890,7 @@ TC_R2BTree13::run()
 {
     R2ShortKey k;
     // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
-    const size_t bufsize = 35;
+    const size_t bufsize = 350;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -3919,8 +3918,9 @@ TC_R2BTree13::run()
     R2PageAccess pa_non_leaf;
     b.initPageAccess(&pa_non_leaf, &non_leaf_buf[0]);
 
-    union uv64 {
+    union uv {
 	uint64_t val64;
+	uint32_t val32;
 	uint8_t  val8;
     };
 
@@ -3928,45 +3928,14 @@ TC_R2BTree13::run()
     ErrorInfo err;
     boost::shared_mutex l;
     bool ok;
-    uint32_t child;
-    uint64_t data;
-
-    a_key = 10;
-
-    err.clear();
-    ok = b.blockInsert(&l, &pa_leaf, &a_key, 1, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.message.length() > 0);
-
-    err.clear();
-    ok = b.blockInsert(&l, &pa_non_leaf, &a_key, 1, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.message.length() > 0);
-
-
-    err.clear();
-    ok = b.blockFind(&l, &pa_leaf, &a_key, &child, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-    ASSERT_TRUE(err.message.length() > 0);
-
-    err.clear();
-    ok = b.blockFind(&l, &pa_non_leaf, &a_key, &data, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-    ASSERT_TRUE(err.message.length() > 0);
+    uv val;
 
     a_key = 0;
     ok = true;
     while (ok) {
 	err.clear();
-	ok = b.blockInsert(&l, &pa_non_leaf, &a_key, 1, &err);
+	val.val32 = 1;
+	ok = b.blockInsert(&l, &pa_non_leaf, &a_key, &val.val8, &err);
 	if (ok)
 	    a_key++;
     }
@@ -3976,19 +3945,13 @@ TC_R2BTree13::run()
 
     err.clear();
     a_key = 0;
-    ok = b.blockDeleteFromNonLeaf(&l, &pa_non_leaf, &a_key, &err);
+    ok = b.blockDelete(&l, &pa_non_leaf, &a_key, &err);
     ASSERT_TRUE(ok == true);
 
     err.clear();
-    a_key = 0;
-    ok = b.blockDeleteFromNonLeaf(&l, &pa_leaf, &a_key, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-
-    err.clear();
     a_key = 1;
-    ok = b.blockInsert(&l, &pa_non_leaf, &a_key, 1, &err);
+    val.val32 = 1;
+    ok = b.blockInsert(&l, &pa_non_leaf, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_DUPLICATE_INSERT);
@@ -3998,21 +3961,14 @@ TC_R2BTree13::run()
     ok = true;
     while (ok) {
 	err.clear();
-	ok = b.blockInsert(&l, &pa_leaf, &a_key, 1, &err);
+	val.val64 = 1;
+	ok = b.blockInsert(&l, &pa_leaf, &a_key, &val.val8, &err);
 	if (ok)
 	    a_key++;
     }
     ASSERT_TRUE(err.haveError == true);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_NODE_FULL);
     ASSERT_TRUE(err.message.find("full") != std::string::npos);
-
-    err.clear();
-    a_key = 0;
-    ok = b.blockDeleteFromLeaf(&l, &pa_non_leaf, &a_key, &err);
-    ASSERT_TRUE(ok == false);
-    ASSERT_TRUE(err.haveError == true);
-    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
-    ASSERT_TRUE(err.message.length() > 0);
 
     this->setStatus(true);
 }
@@ -4033,7 +3989,7 @@ TC_R2BTree14::run()
 {
     R2ShortKey k;
     // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
-    const size_t bufsize = 35;
+    const size_t bufsize = 80;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -4081,15 +4037,15 @@ TC_R2BTree14::run()
     boost::shared_mutex l;
 
     err.clear();
-    ok = b.splitLeaf(NULL, &nl_pa2, &key, &err);
+    ok = b.splitNode(NULL, &nl_pa2, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitLeaf(&nl_pa1, &nl_pa2, &key, &err);
+    ok = b.splitNode(&nl_pa1, &nl_pa2, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitLeaf(&l_pa3, &nl_pa2, &key, &err);
+    ok = b.splitNode(&l_pa3, &nl_pa2, &key, &err);
     ASSERT_TRUE(ok == false);
 
     uv64 val;
@@ -4102,19 +4058,19 @@ TC_R2BTree14::run()
 	if (!ok)
 	    break;
 	key++;
-	val++;
+	val.val64++;
     }
 
     err.clear();
-    ok = b.splitLeaf(&l_pa3, NULL, &key, &err);
+    ok = b.splitNode(&l_pa3, NULL, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitLeaf(&l_pa3, &l_pa3, &key, &err);
+    ok = b.splitNode(&l_pa3, &l_pa3, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitLeaf(&l_pa3, &l_pa4, NULL, &err);
+    ok = b.splitNode(&l_pa3, &l_pa4, NULL, &err);
     ASSERT_TRUE(ok == false);
     
     this->setStatus(true);
@@ -4135,7 +4091,7 @@ void
 TC_R2BTree15::run()
 {
     R2ShortKey k;
-    const size_t bufsize = 35;
+    const size_t bufsize = 80;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -4182,32 +4138,32 @@ TC_R2BTree15::run()
 	if (!ok)
 	    break;
 	key++;
-	val++;
+	val.val64++;
     }
     ASSERT_TRUE(key == ih.maxNumKeys[PageTypeLeaf]);
 
-    ok = b.splitLeaf(&p1, &p2, &mid, &err);
+    ok = b.splitNode(&p1, &p2, &mid, &err);
     ASSERT_TRUE(ok == true);
     
     for (uint8_t k2 = 0; k2 < mid; k2++) {
-	ok = b.blockFind(&l, &p1, &k2, &val, &err);
+	ok = b.blockFind(&l, &p1, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
     for (uint8_t k2 = mid; k2 < ih.maxNumKeys[PageTypeLeaf]; k2++) {
 	err.clear();
-	ok = b.blockFind(&l, &p1, &k2, &val, &err);
+	ok = b.blockFind(&l, &p1, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == false);
 	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
     }
 
     for (uint8_t k2 = 0; k2 < mid; k2++) {
 	err.clear();
-	ok = b.blockFind(&l, &p2, &k2, &val, &err);
+	ok = b.blockFind(&l, &p2, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == false);
 	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
     }
     for (uint8_t k2 = mid; k2 < ih.maxNumKeys[PageTypeLeaf]; k2++) {
-	ok = b.blockFind(&l, &p2, &k2, &val, &err);
+	ok = b.blockFind(&l, &p2, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
 
@@ -4230,7 +4186,7 @@ TC_R2BTree16::run()
 {
     R2ShortKey k;
     // want 3 leaf keys: hdr=8 + val=8*3 + key=1*3 = 33
-    const size_t bufsize = 35;
+    const size_t bufsize = 80;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -4267,8 +4223,9 @@ TC_R2BTree16::run()
     R2PageAccess l_pa4;
     b.initPageAccess(&l_pa4, &l_b4[0]);
 
-    union uv64 {
+    union uv {
 	uint64_t val64;
+	uint32_t val32;
 	uint8_t  val8;
     };
 
@@ -4278,40 +4235,40 @@ TC_R2BTree16::run()
     boost::shared_mutex l;
 
     err.clear();
-    ok = b.splitNonLeaf(NULL, &l_pa3, &key, &err);
+    ok = b.splitNode(NULL, &l_pa3, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitNonLeaf(&l_pa3, &l_pa3, &key, &err);
+    ok = b.splitNode(&l_pa3, &l_pa3, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitNonLeaf(&nl_pa1, &l_pa3, &key, &err);
+    ok = b.splitNode(&nl_pa1, &l_pa3, &key, &err);
     ASSERT_TRUE(ok == false);
 
-    uint32_t child;
+    uv child;
 
     key = 0;
-    child = 0;
+    child.val32 = 0;
     while (true) {
 	err.clear();
-	ok = b.blockInsert(&l, &nl_pa1, &key, child, &err);
+	ok = b.blockInsert(&l, &nl_pa1, &key, &child.val8, &err);
 	if (!ok)
 	    break;
 	key++;
-	child++;
+	child.val32++;
     }
 
     err.clear();
-    ok = b.splitNonLeaf(&nl_pa1, NULL, &key, &err);
+    ok = b.splitNode(&nl_pa1, NULL, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitNonLeaf(&nl_pa1, &l_pa3, &key, &err);
+    ok = b.splitNode(&nl_pa1, &l_pa3, &key, &err);
     ASSERT_TRUE(ok == false);
 
     err.clear();
-    ok = b.splitNonLeaf(&nl_pa1, &nl_pa2, NULL, &err);
+    ok = b.splitNode(&nl_pa1, &nl_pa2, NULL, &err);
     ASSERT_TRUE(ok == false);
     
     this->setStatus(true);
@@ -4332,7 +4289,7 @@ void
 TC_R2BTree17::run()
 {
     R2ShortKey k;
-    const size_t bufsize = 35;
+    const size_t bufsize = 80;
 
     R2BTreeParams params;
     params.pageSize = bufsize;
@@ -4365,7 +4322,7 @@ TC_R2BTree17::run()
 	uint8_t  val8;
     };
 
-    uint32_t val;
+    uv64 val;
     uint8_t key, mid;
     ErrorInfo err;
     bool ok;
@@ -4379,32 +4336,32 @@ TC_R2BTree17::run()
 	if (!ok)
 	    break;
 	key++;
-	val++;
+	val.val64++;
     }
     ASSERT_TRUE(key == ih.maxNumKeys[PageTypeNonLeaf]);
 
-    ok = b.splitNonLeaf(&p1, &p2, &mid, &err);
+    ok = b.splitNode(&p1, &p2, &mid, &err);
     ASSERT_TRUE(ok == true);
     
     for (uint8_t k2 = 0; k2 < mid; k2++) {
-	ok = b.blockFind(&l, &p1, &k2, &val, &err);
+	ok = b.blockFind(&l, &p1, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
     for (uint8_t k2 = mid; k2 < ih.maxNumKeys[PageTypeNonLeaf]; k2++) {
 	err.clear();
-	ok = b.blockFind(&l, &p1, &k2, &val, &err);
+	ok = b.blockFind(&l, &p1, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == false);
 	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
     }
 
     for (uint8_t k2 = 0; k2 < mid; k2++) {
 	err.clear();
-	ok = b.blockFind(&l, &p2, &k2, &val, &err);
+	ok = b.blockFind(&l, &p2, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == false);
 	ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_KEY_NOT_FOUND);
     }
     for (uint8_t k2 = mid; k2 < ih.maxNumKeys[PageTypeNonLeaf]; k2++) {
-	ok = b.blockFind(&l, &p2, &k2, &val, &err);
+	ok = b.blockFind(&l, &p2, &k2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
 
@@ -4428,6 +4385,12 @@ TC_R2BTree18::run()
     const int n_keys = 20;
     const size_t bufsize = sizeof(PageHeader)
 	+ n_keys * (sizeof(uint64_t) + 1); /* keysize */
+
+    R2BTreeParams params;
+    params.pageSize = bufsize;
+    params.keySize = 1;
+    params.valSize = 8;
+
     R2ShortKey k;
     R2IndexHeader ih;
     R2BTree::initIndexHeader(&ih, &params);
@@ -4468,23 +4431,23 @@ TC_R2BTree18::run()
 	ok = b.blockInsert(&l, &p2, &key, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
 	key++;
-	val++;
+	val.val64++;
     }
 
     bool dstIsFirst = true;
 
     err.clear();
-    ok = b.concatLeaf(NULL, &p2, dstIsFirst, &err);
+    ok = b.concatNodes(NULL, &p2, dstIsFirst, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
 
     err.clear();
-    ok = b.concatLeaf(&p1, NULL, dstIsFirst, &err);
+    ok = b.concatNodes(&p1, NULL, dstIsFirst, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
 
     err.clear();
-    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ok = b.concatNodes(&p1, &p2, dstIsFirst, &err);
     ASSERT_TRUE(ok == false);
     ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
 
@@ -4510,6 +4473,12 @@ TC_R2BTree19::run()
 	+ n_keys * (sizeof(uint64_t) + 1); /* keysize */
     R2ShortKey k;
     R2IndexHeader ih;
+
+    R2BTreeParams params;
+    params.pageSize = bufsize;
+    params.keySize = 1;
+    params.valSize = 8;
+
     R2BTree::initIndexHeader(&ih, &params);
     ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == n_keys);
 
@@ -4553,13 +4522,13 @@ TC_R2BTree19::run()
 	ASSERT_TRUE(ok == true);
 
 	key++;
-	val++;
+	val.val64++;
     }
 
     bool dstIsFirst = true;
 
     err.clear();
-    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ok = b.concatNodes(&p1, &p2, dstIsFirst, &err);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(p2.header->numKeys == 0);
     ASSERT_TRUE(p1.header->numKeys == 20);
@@ -4568,11 +4537,11 @@ TC_R2BTree19::run()
 	key2 = key + 100;
 
 	err.clear();
-	ok = b.blockFind(&l, &p1, &key, &val, &err);
+	ok = b.blockFind(&l, &p1, &key, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
 
 	err.clear();
-	ok = b.blockFind(&l, &p1, &key2, &val, &err);
+	ok = b.blockFind(&l, &p1, &key2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
 
@@ -4594,13 +4563,13 @@ TC_R2BTree19::run()
 	ASSERT_TRUE(ok == true);
 
 	key++;
-	val++;
+	val.val64++;
     }
     
     dstIsFirst = false;
 
     err.clear();
-    ok = b.concatLeaf(&p1, &p2, dstIsFirst, &err);
+    ok = b.concatNodes(&p1, &p2, dstIsFirst, &err);
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(p2.header->numKeys == 0);
     ASSERT_TRUE(p1.header->numKeys == 20);
@@ -4609,11 +4578,11 @@ TC_R2BTree19::run()
 	key2 = key + 100;
 
 	err.clear();
-	ok = b.blockFind(&l, &p1, &key, &val, &err);
+	ok = b.blockFind(&l, &p1, &key, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
 
 	err.clear();
-	ok = b.blockFind(&l, &p1, &key2, &val, &err);
+	ok = b.blockFind(&l, &p1, &key2, &val.val8, &err);
 	ASSERT_TRUE(ok == true);
     }
 
@@ -4621,7 +4590,6 @@ TC_R2BTree19::run()
 }
 
 }
-#endif
 
 /****************************************************/
 /* top level                                        */
@@ -4684,8 +4652,6 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree09());
     s->addTestCase(new dback::TC_R2BTree10());
     s->addTestCase(new dback::TC_R2BTree11());
-
-#if 0
     s->addTestCase(new dback::TC_R2BTree12());
     s->addTestCase(new dback::TC_R2BTree13());
     s->addTestCase(new dback::TC_R2BTree14());
@@ -4694,7 +4660,6 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree17());
     s->addTestCase(new dback::TC_R2BTree18());
     s->addTestCase(new dback::TC_R2BTree19());
-#endif
 
     return s;
 }
