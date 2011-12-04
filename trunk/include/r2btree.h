@@ -438,14 +438,24 @@ public:
      * @param [in,out] n1  Node.
      * @param [in,out] n2  Node.
      *
-     * 
-     * 
-     * 
+     * Redistribute the keys, so that each node has atleast the
+     * minimum required number of keys. Returns true if redistribution
+     * takes place successfully. Otherwise false is returned and n1
+     * and n2 are unmodified. Nodes must be of the same type, and
+     * neither n1 nor n2 can be null. All of the keys in n1 must be
+     * less than all of the keys in n2 - this condition is not
+     * checked.
+     *
+     * The keys will be redistributed so that n1 and n2 have
+     * approximately the same number of keys. The ordering of the keys
+     * will be preserved.
+     *
+     * @note Locking is the callers resposibility.
      *
      * @result true if success, false otherwise.
      *
      */
-    bool redistribute(R2PageAccess *n1, R2PageAccess *n2, ErrorInfo *err);
+    bool redistributeNodes(R2PageAccess *n1, R2PageAccess *n2, ErrorInfo *err);
 
     /********************************************************/
 
