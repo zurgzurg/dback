@@ -4654,6 +4654,183 @@ TC_R2BTree20::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_R2BTree21 : public TestCase {
+    TC_R2BTree21() : TestCase("TC_R2BTree21") {;};
+    void run();
+};
+
+void
+TC_R2BTree21::run()
+{
+    R2BTreeParams params;
+
+    params.keySize = 1;
+    params.valSize = 4;
+
+    const int n_keys = 20;
+    params.pageSize = sizeof(PageHeader)
+	+ n_keys * (params.valSize + params.keySize);
+
+    R2ShortKey k;
+    R2IndexHeader ih;
+    R2BTree::initIndexHeader(&ih, &params);
+    ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == n_keys);
+
+    R2BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[params.pageSize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[params.pageSize];
+    b.initLeafPage(&buf2[0]);
+    uint8_t buf3[params.pageSize];
+    b.initNonLeafPage(&buf3[0]);
+
+    R2PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    R2PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+    R2PageAccess p3;
+    b.initPageAccess(&p3, &buf3[0]);
+
+    ErrorInfo err;
+    bool ok;
+
+    err.clear();
+    ok = b.redistributeNodes(NULL, &p2, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
+    ok = b.redistributeNodes(&p1, NULL, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
+    ok = b.redistributeNodes(&p1, &p3, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    err.clear();
+    ok = b.redistributeNodes(&p1, &p2, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    this->setStatus(true);
+}
+
+}
+
+
+/************/
+
+namespace dback {
+
+struct TC_R2BTree22 : public TestCase {
+    TC_R2BTree22() : TestCase("TC_R2BTree22") {;};
+    void run();
+};
+
+void
+TC_R2BTree22::run()
+{
+    R2BTreeParams params;
+
+    params.keySize = 1;
+    params.valSize = 4;
+
+    const int n_keys = 20;
+    params.pageSize = sizeof(PageHeader)
+	+ n_keys * (params.valSize + params.keySize);
+
+    R2ShortKey k;
+    R2IndexHeader ih;
+    R2BTree::initIndexHeader(&ih, &params);
+    ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == n_keys);
+
+    R2BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[params.pageSize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[params.pageSize];
+    b.initLeafPage(&buf2[0]);
+
+    R2PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    R2PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+
+    union uv {
+	uint32_t val32;
+	uint8_t  val8;
+    } val;
+    ErrorInfo err;
+    bool ok;
+    uint8_t key, key2;
+    boost::shared_mutex l;
+
+    for (key = 0; key < ih.maxNumKeys[PageTypeLeaf]; key++) {
+	val.val32 = key;
+	err.clear();
+	ok = b.blockInsert(&l, &p1, &key, &val.val8, &err);
+	ASSERT_TRUE(ok == true);
+    }
+
+    for (key = 0; key < ih.minNumKeys[PageTypeLeaf] - 1; key++) {
+	key2 = 100 + key;
+	val.val32 = key2;
+	err.clear();
+	ok = b.blockInsert(&l, &p2, &key2, &val.val8, &err);
+	ASSERT_TRUE(ok == true);
+    }
+
+    size_t totKeys = p1.header->numKeys + p2.header->numKeys;
+
+    ok = b.redistributeNodes(&p1, &p2, &err);
+    ASSERT_TRUE(ok == true);
+    ASSERT_TRUE(p1.header->numKeys >= b.header->minNumKeys[PageTypeLeaf]);
+    ASSERT_TRUE(p2.header->numKeys >= b.header->minNumKeys[PageTypeLeaf]);
+    ASSERT_TRUE(totKeys == p1.header->numKeys + p2.header->numKeys);
+
+    for (key = 0; key < p1.header->numKeys; key++) {
+	err.clear();
+	val.val32 = 0xFFFFffff;
+	ok = b.blockFind(&l, &p1, &key, &val.val8, &err);
+	ASSERT_TRUE(ok == true);
+	ASSERT_TRUE(val.val32 == key);
+    }
+
+    for (key = p1.header->numKeys; key < ih.maxNumKeys[PageTypeLeaf]; key++) {
+	err.clear();
+	val.val32 = 0xFFFFffff;
+	ok = b.blockFind(&l, &p2, &key, &val.val8, &err);
+	ASSERT_TRUE(ok == true);
+	ASSERT_TRUE(val.val32 == key);
+    }
+
+    for (key = 0; key < ih.minNumKeys[PageTypeLeaf] - 1; key++) {
+	key2 = 100 + key;
+	val.val32 = 0xFFFFffff;
+	err.clear();
+	ok = b.blockFind(&l, &p2, &key2, &val.val8, &err);
+	ASSERT_TRUE(ok == true);
+	ASSERT_TRUE(val.val32 == key2);
+    }
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -4724,6 +4901,8 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree18());
     s->addTestCase(new dback::TC_R2BTree19());
     s->addTestCase(new dback::TC_R2BTree20());
+    s->addTestCase(new dback::TC_R2BTree21());
+    s->addTestCase(new dback::TC_R2BTree22());
 
     return s;
 }
