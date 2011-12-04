@@ -3268,6 +3268,11 @@ TC_R2BTree06::run()
     ASSERT_TRUE(ok == true);
     ASSERT_TRUE(val.val64 == 5);
 
+    ok = b.getData(&val.val8, &pa, idx + 200);
+    ASSERT_TRUE(ok == false);
+    ok = b.getData(NULL, &pa, idx);
+    ASSERT_TRUE(ok == false);
+
     a_key = 10;
     ok = b.findKeyPosition(&pa, &a_key, &idx);
     ASSERT_TRUE(ok == true);
@@ -3598,6 +3603,10 @@ TC_R2BTree09::run()
     a_key = 6;
     ok = b.blockFind(&l, &pa, &a_key, &val.val8, &err);
     ASSERT_TRUE(ok == false);
+
+    a_key = 10;
+    ok = b.blockFind(&l, &pa, &a_key, NULL, &err);
+    ASSERT_TRUE(ok == true);
 
     this->setStatus(true);
 }
@@ -4591,6 +4600,60 @@ TC_R2BTree19::run()
 
 }
 
+/************/
+
+namespace dback {
+
+struct TC_R2BTree20 : public TestCase {
+    TC_R2BTree20() : TestCase("TC_R2BTree20") {;};
+    void run();
+};
+
+void
+TC_R2BTree20::run()
+{
+    const int n_keys = 20;
+    const size_t bufsize = sizeof(PageHeader)
+	+ n_keys * (sizeof(uint64_t) + 1); /* keysize */
+
+    R2BTreeParams params;
+    params.pageSize = bufsize;
+    params.keySize = 1;
+    params.valSize = 8;
+
+    R2ShortKey k;
+    R2IndexHeader ih;
+    R2BTree::initIndexHeader(&ih, &params);
+    ASSERT_TRUE(ih.maxNumKeys[PageTypeLeaf] == n_keys);
+
+    R2BTree b;
+    b.header = &ih;
+    b.root = NULL;
+    b.ki = &k;
+
+    uint8_t buf1[bufsize];
+    b.initLeafPage(&buf1[0]);
+    uint8_t buf2[bufsize];
+    b.initNonLeafPage(&buf2[0]);
+
+    R2PageAccess p1;
+    b.initPageAccess(&p1, &buf1[0]);
+    R2PageAccess p2;
+    b.initPageAccess(&p2, &buf2[0]);
+
+    ErrorInfo err;
+    bool ok;
+
+    err.clear();
+    ok = b.concatNodes(&p1, &p2, true, &err);
+    ASSERT_TRUE(ok == false);
+    ASSERT_TRUE(err.errorNum == ErrorInfo::ERR_BAD_ARG);
+
+    this->setStatus(true);
+}
+
+}
+
 /****************************************************/
 /* top level                                        */
 /****************************************************/
@@ -4660,6 +4723,7 @@ make_suite_all_tests()
     s->addTestCase(new dback::TC_R2BTree17());
     s->addTestCase(new dback::TC_R2BTree18());
     s->addTestCase(new dback::TC_R2BTree19());
+    s->addTestCase(new dback::TC_R2BTree20());
 
     return s;
 }

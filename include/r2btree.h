@@ -365,7 +365,6 @@ public:
 
     /********************************************************/
 
-
     /**
      * Split a node.
      *
@@ -396,8 +395,6 @@ public:
     bool splitNode(R2PageAccess *full, R2PageAccess *empty, uint8_t *key,
 		   ErrorInfo *err);
 
-
-    
     /**
      * Concatenate two nodes.
      *
@@ -434,6 +431,21 @@ public:
     bool concatNodes(R2PageAccess *dst, R2PageAccess *src, bool dstIsFirst,
 		     ErrorInfo *err);
 
+
+    /**
+     * Redistribute keys between two nodes.
+     *
+     * @param [in,out] n1  Node.
+     * @param [in,out] n2  Node.
+     *
+     * 
+     * 
+     * 
+     *
+     * @result true if success, false otherwise.
+     *
+     */
+    bool redistribute(R2PageAccess *n1, R2PageAccess *n2, ErrorInfo *err);
 
     /********************************************************/
 
