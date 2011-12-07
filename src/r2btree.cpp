@@ -297,6 +297,13 @@ R2BTree::redistributeNodes(R2PageAccess *n1, R2PageAccess *n2, ErrorInfo *err)
 	return false;
     }
     
+    if (n1->header->numKeys >= minNumKeys
+	&& n2->header->numKeys >= minNumKeys) {
+	err->setErrNum(ErrorInfo::ERR_BAD_ARG);
+	err->message.assign("invalid input");
+	return false;
+    }
+
     uint8_t *src, *dst;
     size_t src_idx, nbytes;
 
@@ -323,6 +330,28 @@ R2BTree::redistributeNodes(R2PageAccess *n1, R2PageAccess *n2, ErrorInfo *err)
 
 	n1->header->numKeys -= n2_needs;
 	n2->header->numKeys += n2_needs;
+    }
+    else {
+	size_t n1_needs = minNumKeys - n1->header->numKeys;
+	
+	nbytes = n1_needs * this->header->keySize;
+	dst = n1->keys + n1->header->numKeys * this->header->keySize;
+	memmove(dst, n2->keys, nbytes);
+	
+	nbytes = (n2->header->numKeys - n1_needs) * this->header->keySize;
+	src = n2->keys + n1_needs * this->header->keySize;
+	memmove(n2->keys, src, nbytes);
+
+	nbytes = n1_needs * this->header->valSize[pt];
+	dst = n1->vals + n1->header->numKeys * this->header->valSize[pt];
+	memmove(dst, n2->vals, nbytes);
+
+	nbytes = (n2->header->numKeys - n1_needs) * this->header->valSize[pt];
+	src = n2->vals + n1_needs * this->header->valSize[pt];
+	memmove(n2->vals, src, nbytes);
+
+	n1->header->numKeys += n1_needs;
+	n2->header->numKeys -= n1_needs;
     }
 
     return true;
