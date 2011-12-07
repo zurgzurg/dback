@@ -1,10 +1,10 @@
 AC_INIT([dback], [0.1], [http://code.google.com/p/dback/issues/list])
 
-AM_INIT_AUTOMAKE([-Wall])
+AM_INIT_AUTOMAKE([subdir-objects -Wall])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([src/dback.cpp])
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile])
 
 AC_PROG_INSTALL
 
