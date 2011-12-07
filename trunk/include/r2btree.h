@@ -448,8 +448,12 @@ public:
      *
      * The keys will be redistributed so that n1 and n2 have
      * approximately the same number of keys. The ordering of the keys
-     * will be preserved.
+     * will be preserved (all n1 keys are before all n2 keys).
      *
+     * This routine is really only intended to be used when exactly one
+     * node has less than the minimum number of keys - so it will reject
+     * any other kind of input.
+     * 
      * @note Locking is the callers resposibility.
      *
      * @result true if success, false otherwise.
